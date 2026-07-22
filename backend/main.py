@@ -1,3 +1,4 @@
+from datetime import date
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -94,3 +95,131 @@ def cadastrar_veiculo(
     db.refresh(novo_veiculo)
 
     return novo_veiculo
+
+# MANUTENÇÕES
+
+@app.get(
+    "/manutencoes",
+    response_model=list[schemas.ManutencaoResponse],
+    tags=["Manutenções"],
+)
+def listar_manutencoes(
+    db: Session = Depends(get_db),
+):
+    manutencoes = db.scalars(
+        select(models.Manutencao)
+        .order_by(models.Manutencao.data_entrada.desc())
+    ).all()
+
+    return manutencoes
+
+
+@app.get(
+    "/manutencoes/ativas",
+    response_model=list[schemas.ManutencaoResponse],
+    tags=["Manutenções"],
+)
+def listar_manutencoes_ativas(
+    db: Session = Depends(get_db),
+):
+    manutencoes = db.scalars(
+        select(models.Manutencao)
+        .where(
+            models.Manutencao.status == "EM_MANUTENCAO"
+        )
+        .order_by(models.Manutencao.data_entrada.desc())
+    ).all()
+
+    return manutencoes
+
+
+@app.post(
+    "/manutencoes",
+    response_model=schemas.ManutencaoResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Manutenções"],
+)
+def cadastrar_manutencao(
+    manutencao: schemas.ManutencaoCreate,
+    db: Session = Depends(get_db),
+):
+    veiculo = db.get(
+        models.Veiculo,
+        manutencao.veiculo_id,
+    )
+
+    if not veiculo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Veículo não encontrado.",
+        )
+
+    manutencao_ativa = db.scalar(
+        select(models.Manutencao).where(
+            models.Manutencao.veiculo_id
+            == manutencao.veiculo_id,
+            models.Manutencao.status
+            == "EM_MANUTENCAO",
+        )
+    )
+
+    if manutencao_ativa:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Este veículo já possui uma manutenção ativa."
+            ),
+        )
+
+    nova_manutencao = models.Manutencao(
+        veiculo_id=manutencao.veiculo_id,
+        motivo=manutencao.motivo.strip(),
+        data_entrada=manutencao.data_entrada,
+        previsao_retorno=manutencao.previsao_retorno,
+        status="EM_MANUTENCAO",
+    )
+
+    db.add(nova_manutencao)
+    db.commit()
+    db.refresh(nova_manutencao)
+
+    return nova_manutencao
+
+
+@app.patch(
+    "/manutencoes/{manutencao_id}/finalizar",
+    response_model=schemas.ManutencaoResponse,
+    tags=["Manutenções"],
+)
+def finalizar_manutencao(
+    manutencao_id: int,
+    dados: schemas.ManutencaoFinalizar,
+    db: Session = Depends(get_db),
+):
+    manutencao = db.get(
+        models.Manutencao,
+        manutencao_id,
+    )
+
+    if not manutencao:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Manutenção não encontrada.",
+        )
+
+    if manutencao.status != "EM_MANUTENCAO":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Esta manutenção já foi finalizada.",
+        )
+
+    manutencao.data_retorno = (
+        dados.data_retorno or date.today()
+    )
+
+    manutencao.status = "FINALIZADA"
+
+    db.commit()
+    db.refresh(manutencao)
+
+    return manutencao

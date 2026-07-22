@@ -785,3 +785,8 @@ tbody tr:hover {
 .secondary-button:hover {
     background: var(--surface-soft);
 }
+
+.badge-maintenance {
+    color: #a16207;
+    background: #fef3c7;
+}
