@@ -223,3 +223,102 @@ def finalizar_manutencao(
     db.refresh(manutencao)
 
     return manutencao
+
+# MOTORISTAS
+
+@app.get(
+    "/motoristas",
+    response_model=list[schemas.MotoristaResponse],
+    tags=["Motoristas"],
+)
+def listar_motoristas(
+    db: Session = Depends(get_db),
+):
+    motoristas = db.scalars(
+        select(models.Motorista)
+        .order_by(models.Motorista.nome)
+    ).all()
+
+    return motoristas
+
+
+@app.post(
+    "/motoristas",
+    response_model=schemas.MotoristaResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Motoristas"],
+)
+def cadastrar_motorista(
+    motorista: schemas.MotoristaCreate,
+    db: Session = Depends(get_db),
+):
+    nome_normalizado = motorista.nome.strip()
+
+    if not nome_normalizado:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Informe o nome do motorista.",
+        )
+
+    novo_motorista = models.Motorista(
+        nome=nome_normalizado,
+        telefone=(
+            motorista.telefone.strip()
+            if motorista.telefone
+            else None
+        ),
+        ativo=motorista.ativo,
+    )
+
+    db.add(novo_motorista)
+    db.commit()
+    db.refresh(novo_motorista)
+
+    return novo_motorista
+
+
+@app.patch(
+    "/motoristas/{motorista_id}",
+    response_model=schemas.MotoristaResponse,
+    tags=["Motoristas"],
+)
+def atualizar_motorista(
+    motorista_id: int,
+    dados: schemas.MotoristaUpdate,
+    db: Session = Depends(get_db),
+):
+    motorista = db.get(
+        models.Motorista,
+        motorista_id,
+    )
+
+    if not motorista:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Motorista não encontrado.",
+        )
+
+    if dados.nome is not None:
+        nome = dados.nome.strip()
+
+        if not nome:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="O nome não pode ficar vazio.",
+            )
+
+        motorista.nome = nome
+
+    if dados.telefone is not None:
+        motorista.telefone = (
+            dados.telefone.strip()
+            or None
+        )
+
+    if dados.ativo is not None:
+        motorista.ativo = dados.ativo
+
+    db.commit()
+    db.refresh(motorista)
+
+    return motorista

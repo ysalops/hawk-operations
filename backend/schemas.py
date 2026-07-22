@@ -65,3 +65,26 @@ class ManutencaoResponse(BaseModel):
 
 class ManutencaoFinalizar(BaseModel):
     data_retorno: date | None = None
+
+# MOTORISTAS
+
+class MotoristaCreate(BaseModel):
+    nome: str
+    telefone: str | None = None
+    ativo: bool = True
+
+
+class MotoristaUpdate(BaseModel):
+    nome: str | None = None
+    telefone: str | None = None
+    ativo: bool | None = None
+
+
+class MotoristaResponse(BaseModel):
+    id: int
+    nome: str
+    telefone: str | None
+    ativo: bool
+    criado_em: datetime
+
+    model_config = ConfigDict(from_attributes=True)
