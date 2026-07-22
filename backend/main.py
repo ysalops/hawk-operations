@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,6 +12,9 @@ from backend.database import Base, engine, get_db
 
 Base.metadata.create_all(bind=engine)
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIR = BASE_DIR / "frontend"
+
 
 app = FastAPI(
     title="Hawk Operations API",
@@ -16,12 +23,17 @@ app = FastAPI(
 )
 
 
-@app.get("/")
+# Arquivos CSS e JavaScript
+app.mount(
+    "/static",
+    StaticFiles(directory=FRONTEND_DIR),
+    name="static",
+)
+
+
+@app.get("/", include_in_schema=False)
 def home():
-    return {
-        "aplicacao": "Hawk Operations",
-        "status": "online",
-    }
+    return FileResponse(FRONTEND_DIR / "index.html")
 
 
 @app.get("/health")

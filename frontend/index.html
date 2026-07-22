@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Hawk Operations</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css"
+    >
+</head>
+
+
+<body>
+
+    <!-- =========================
+         SIDEBAR
+    ========================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                H
+            </div>
+
+            <div>
+
+                <h1>
+                    Hawk
+                </h1>
+
+                <span>
+                    Operations
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <nav class="menu">
+
+            <button class="menu-item active">
+
+                <span>
+                    ▦
+                </span>
+
+                Dashboard
+
+            </button>
+
+
+            <button class="menu-item">
+
+                <span>
+                    🚚
+                </span>
+
+                Frota
+
+            </button>
+
+
+            <button class="menu-item">
+
+                <span>
+                    👤
+                </span>
+
+                Motoristas
+
+            </button>
+
+
+            <button class="menu-item">
+
+                <span>
+                    🛠
+                </span>
+
+                Manutenções
+
+            </button>
+
+
+            <button class="menu-item">
+
+                <span>
+                    📍
+                </span>
+
+                Operação
+
+            </button>
+
+
+            <button class="menu-item">
+
+                <span>
+                    📄
+                </span>
+
+                Panorama
+
+            </button>
+
+        </nav>
+
+
+        <div class="sidebar-footer">
+
+            <div class="company">
+
+                <div class="company-avatar">
+                    HT
+                </div>
+
+
+                <div>
+
+                    <strong>
+                        Hawk Transportes
+                    </strong>
+
+                    <span>
+                        SSP17 • SBC
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- =========================
+         CONTEÚDO PRINCIPAL
+    ========================== -->
+
+    <main class="main-content">
+
+
+        <!-- HEADER -->
+
+        <header class="topbar">
+
+
+            <div>
+
+                <p class="eyebrow">
+                    VISÃO GERAL
+                </p>
+
+
+                <h2>
+                    Panorama Operacional
+                </h2>
+
+
+                <p class="subtitle">
+                    Acompanhe a frota e a operação em tempo real.
+                </p>
+
+            </div>
+
+
+            <div class="topbar-actions">
+
+
+                <div class="system-status">
+
+                    <span class="status-dot"></span>
+
+                    Sistema online
+
+                </div>
+
+
+                <button
+                    class="primary-button"
+                    id="openVehicleModal"
+                    type="button"
+                >
+                    + Novo veículo
+                </button>
+
+
+            </div>
+
+        </header>
+
+
+
+        <!-- =========================
+             CARDS
+        ========================== -->
+
+        <section class="cards">
+
+
+            <!-- TOTAL DA FROTA -->
+
+            <article class="card">
+
+                <div class="card-top">
+
+                    <span>
+                        Total da frota
+                    </span>
+
+
+                    <div class="card-icon">
+                        🚚
+                    </div>
+
+                </div>
+
+
+                <strong id="totalVeiculos">
+                    --
+                </strong>
+
+
+                <small>
+                    Veículos cadastrados
+                </small>
+
+            </article>
+
+
+
+            <!-- VEÍCULOS ATIVOS -->
+
+            <article class="card">
+
+                <div class="card-top">
+
+                    <span>
+                        Veículos ativos
+                    </span>
+
+
+                    <div class="card-icon">
+                        ✓
+                    </div>
+
+                </div>
+
+
+                <strong id="veiculosAtivos">
+                    --
+                </strong>
+
+
+                <small>
+                    Disponíveis na base
+                </small>
+
+            </article>
+
+
+
+            <!-- MANUTENÇÃO -->
+
+            <article class="card">
+
+                <div class="card-top">
+
+                    <span>
+                        Em manutenção
+                    </span>
+
+
+                    <div class="card-icon">
+                        🛠
+                    </div>
+
+                </div>
+
+
+                <strong id="veiculosManutencao">
+                    0
+                </strong>
+
+
+                <small>
+                    Controle em desenvolvimento
+                </small>
+
+            </article>
+
+
+
+            <!-- OPERAÇÃO -->
+
+            <article class="card">
+
+                <div class="card-top">
+
+                    <span>
+                        Operação de hoje
+                    </span>
+
+
+                    <div class="card-icon">
+                        ↗
+                    </div>
+
+                </div>
+
+
+                <strong id="operacaoHoje">
+                    --
+                </strong>
+
+
+                <small>
+                    Aguardando integração
+                </small>
+
+            </article>
+
+
+        </section>
+
+
+
+        <!-- =========================
+             TABELA DA FROTA
+        ========================== -->
+
+        <section class="panel">
+
+
+            <div class="panel-header">
+
+
+                <div>
+
+                    <h3>
+                        Frota cadastrada
+                    </h3>
+
+
+                    <p>
+                        Veículos atualmente registrados no sistema.
+                    </p>
+
+                </div>
+
+
+
+                <div class="table-actions">
+
+
+                    <div class="search-box">
+
+                        <span>
+                            ⌕
+                        </span>
+
+
+                        <input
+                            id="searchInput"
+                            type="text"
+                            placeholder="Buscar por placa..."
+                            autocomplete="off"
+                        >
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+
+            <div class="table-wrapper">
+
+
+                <table>
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Placa
+                            </th>
+
+                            <th>
+                                Tipo
+                            </th>
+
+                            <th>
+                                Categoria
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+
+                    <tbody id="veiculosTable">
+
+
+                        <tr>
+
+                            <td
+                                colspan="4"
+                                class="loading"
+                            >
+                                Carregando frota...
+                            </td>
+
+                        </tr>
+
+
+                    </tbody>
+
+
+                </table>
+
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- =========================
+         MODAL NOVO VEÍCULO
+    ========================== -->
+
+    <div
+        class="modal-overlay"
+        id="vehicleModal"
+    >
+
+
+        <div class="modal">
+
+
+            <!-- CABEÇALHO DO MODAL -->
+
+            <div class="modal-header">
+
+
+                <div>
+
+                    <p class="eyebrow">
+                        NOVO CADASTRO
+                    </p>
+
+
+                    <h3>
+                        Adicionar veículo
+                    </h3>
+
+
+                    <p>
+                        Cadastre um novo veículo na frota.
+                    </p>
+
+                </div>
+
+
+
+                <button
+                    class="modal-close"
+                    id="closeVehicleModal"
+                    type="button"
+                    aria-label="Fechar modal"
+                >
+                    ×
+                </button>
+
+
+            </div>
+
+
+
+            <!-- FORMULÁRIO -->
+
+            <form id="vehicleForm">
+
+
+                <!-- PLACA -->
+
+                <div class="form-group">
+
+                    <label for="vehiclePlate">
+                        Placa
+                    </label>
+
+
+                    <input
+                        id="vehiclePlate"
+                        name="placa"
+                        type="text"
+                        placeholder="Ex: ABC1D23"
+                        maxlength="10"
+                        autocomplete="off"
+                        required
+                    >
+
+                </div>
+
+
+
+                <!-- TIPO -->
+
+                <div class="form-group">
+
+                    <label for="vehicleType">
+                        Tipo do veículo
+                    </label>
+
+
+                    <select
+                        id="vehicleType"
+                        name="tipo"
+                    >
+
+
+                        <option value="">
+                            Selecione
+                        </option>
+
+
+                        <option value="Fiorino">
+                            Fiorino
+                        </option>
+
+
+                        <option value="Doblò">
+                            Doblò
+                        </option>
+
+
+                        <option value="Van">
+                            Van
+                        </option>
+
+
+                        <option value="HR">
+                            HR
+                        </option>
+
+
+                        <option value="VUC">
+                            VUC
+                        </option>
+
+
+                        <option value="Outro">
+                            Outro
+                        </option>
+
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- CATEGORIA -->
+
+                <div class="form-group">
+
+                    <label for="vehicleCategory">
+                        Categoria
+                    </label>
+
+
+                    <select
+                        id="vehicleCategory"
+                        name="categoria"
+                    >
+
+
+                        <option value="Frota fixa">
+                            Frota fixa
+                        </option>
+
+
+                        <option value="Reserva">
+                            Reserva
+                        </option>
+
+
+                        <option value="Terceirizado">
+                            Terceirizado
+                        </option>
+
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- MENSAGEM -->
+
+                <div
+                    class="form-message"
+                    id="vehicleFormMessage"
+                ></div>
+
+
+
+                <!-- BOTÕES -->
+
+                <div class="modal-actions">
+
+
+                    <button
+                        type="button"
+                        class="secondary-button"
+                        id="cancelVehicleModal"
+                    >
+                        Cancelar
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="primary-button"
+                        id="saveVehicleButton"
+                    >
+                        Cadastrar veículo
+                    </button>
+
+
+                </div>
+
+
+            </form>
+
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- =========================
+         JAVASCRIPT
+
+         Importante:
+         fica no final do body para todos
+         os elementos HTML já existirem
+         quando o app.js for executado.
+    ========================== -->
+
+    <script src="/static/js/app.js"></script>
+
+
+</body>
+
+</html>
