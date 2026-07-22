@@ -1,0 +1,30 @@
+# Ambiente virtual
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Banco de dados local
+*.db
+*.sqlite
+*.sqlite3
+
+# Variáveis de ambiente
+.env
+.env.*
+
+# Autenticação e sessões
+auth.json
+cookies.json
+playwright/.auth/
+automation/.auth/
+
+# VS Code
+.vscode/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
