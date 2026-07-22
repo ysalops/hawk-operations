@@ -931,3 +931,46 @@ tbody tr:hover {
 .app-view.active {
     display: block;
 }
+
+/* OPERAÇÃO */
+
+.operation-filters {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: 14px;
+
+    padding: 18px 22px;
+
+    margin-bottom: 24px;
+}
+
+
+.operation-filters .form-group {
+    margin-bottom: 0;
+
+    min-width: 190px;
+}
+
+
+.badge-operation {
+    white-space: nowrap;
+}
+
+.badge-operation {
+    color: #31558f;
+    background: #edf3ff;
+}
+
+.delete-operation {
+    color: #b42318;
+}
+
+.delete-operation:hover {
+    background: #fff1f0;
+    border-color: #f3c5c0;
+}

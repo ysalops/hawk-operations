@@ -1,9 +1,7 @@
-// =====================================================
 // HAWK OPERATIONS
-// app.js
 
 
-// ELEMENTOS - DASHBOARD / FROTA
+// ELEMENTOS - DASHBOARD
 
 const tableBody =
     document.getElementById("veiculosTable");
@@ -16,6 +14,9 @@ const veiculosAtivos =
 
 const veiculosManutencao =
     document.getElementById("veiculosManutencao");
+
+const operacaoHoje =
+    document.getElementById("operacaoHoje");
 
 const searchInput =
     document.getElementById("searchInput");
@@ -32,6 +33,9 @@ const menuDrivers =
 const menuMaintenance =
     document.getElementById("menuMaintenance");
 
+const menuOperations =
+    document.getElementById("menuOperations");
+
 
 const dashboardView =
     document.getElementById("dashboardView");
@@ -42,8 +46,11 @@ const driversView =
 const maintenanceView =
     document.getElementById("maintenanceView");
 
+const operationsView =
+    document.getElementById("operationsView");
 
-// ELEMENTOS - MODAL VEÍCULO
+
+// ELEMENTOS - VEÍCULOS
 
 const openVehicleModal =
     document.getElementById("openVehicleModal");
@@ -74,6 +81,45 @@ const vehicleType =
 
 const vehicleCategory =
     document.getElementById("vehicleCategory");
+
+
+// ELEMENTOS - MOTORISTAS
+
+const driversTable =
+    document.getElementById("driversTable");
+
+const driversTotal =
+    document.getElementById("driversTotal");
+
+const driverSearchInput =
+    document.getElementById("driverSearchInput");
+
+const openDriverModal =
+    document.getElementById("openDriverModal");
+
+const closeDriverModal =
+    document.getElementById("closeDriverModal");
+
+const cancelDriverModal =
+    document.getElementById("cancelDriverModal");
+
+const driverModal =
+    document.getElementById("driverModal");
+
+const driverForm =
+    document.getElementById("driverForm");
+
+const driverName =
+    document.getElementById("driverName");
+
+const driverPhone =
+    document.getElementById("driverPhone");
+
+const driverFormMessage =
+    document.getElementById("driverFormMessage");
+
+const saveDriverButton =
+    document.getElementById("saveDriverButton");
 
 
 // ELEMENTOS - MANUTENÇÕES
@@ -118,44 +164,58 @@ const saveMaintenanceButton =
     document.getElementById("saveMaintenanceButton");
 
 
-// ELEMENTOS - MOTORISTAS
+// ELEMENTOS - OPERAÇÕES
 
-const driversTable =
-    document.getElementById("driversTable");
+const operationsTable =
+    document.getElementById("operationsTable");
 
-const driversTotal =
-    document.getElementById("driversTotal");
+const operationFilterDate =
+    document.getElementById("operationFilterDate");
 
-const driverSearchInput =
-    document.getElementById("driverSearchInput");
+const operationFilterShift =
+    document.getElementById("operationFilterShift");
 
+const openOperationModal =
+    document.getElementById("openOperationModal");
 
-const openDriverModal =
-    document.getElementById("openDriverModal");
+const closeOperationModal =
+    document.getElementById("closeOperationModal");
 
-const closeDriverModal =
-    document.getElementById("closeDriverModal");
+const cancelOperationModal =
+    document.getElementById("cancelOperationModal");
 
-const cancelDriverModal =
-    document.getElementById("cancelDriverModal");
+const operationModal =
+    document.getElementById("operationModal");
 
-const driverModal =
-    document.getElementById("driverModal");
+const operationForm =
+    document.getElementById("operationForm");
 
-const driverForm =
-    document.getElementById("driverForm");
+const operationDate =
+    document.getElementById("operationDate");
 
-const driverName =
-    document.getElementById("driverName");
+const operationShift =
+    document.getElementById("operationShift");
 
-const driverPhone =
-    document.getElementById("driverPhone");
+const operationVehicle =
+    document.getElementById("operationVehicle");
 
-const driverFormMessage =
-    document.getElementById("driverFormMessage");
+const operationDriver =
+    document.getElementById("operationDriver");
 
-const saveDriverButton =
-    document.getElementById("saveDriverButton");
+const operationRoute =
+    document.getElementById("operationRoute");
+
+const operationStatus =
+    document.getElementById("operationStatus");
+
+const operationObservation =
+    document.getElementById("operationObservation");
+
+const operationFormMessage =
+    document.getElementById("operationFormMessage");
+
+const saveOperationButton =
+    document.getElementById("saveOperationButton");
 
 
 // DADOS
@@ -165,6 +225,50 @@ let veiculos = [];
 let manutencoesAtivas = [];
 
 let motoristas = [];
+
+let operacoes = [];
+
+
+// STATUS DA OPERAÇÃO
+
+const statusOperacao = {
+
+    CARREGANDO: {
+        texto: "✅ Carregando",
+        classe: "badge-active"
+    },
+
+    RESERVA_CARREGANDO: {
+        texto: "🚗 Reserva / Carregando",
+        classe: "badge-operation"
+    },
+
+    FOLGA: {
+        texto: "⚠️ Folga",
+        classe: "badge-maintenance"
+    },
+
+    IMPEDIDO: {
+        texto: "🚫 Impedido",
+        classe: "badge-inactive"
+    },
+
+    SEM_CARGA: {
+        texto: "📦 Sem carga",
+        classe: "badge-operation"
+    },
+
+    OUTRO_SERVICE: {
+        texto: "🔄 Outro service",
+        classe: "badge-operation"
+    },
+
+    INDISPONIVEL_MOTORISTA: {
+        texto: "⏸️ Indisponível / Motorista",
+        classe: "badge-inactive"
+    }
+
+};
 
 
 // UTILITÁRIOS
@@ -182,13 +286,19 @@ function hojeISO() {
     const mes =
         String(
             hoje.getMonth() + 1
-        ).padStart(2, "0");
+        ).padStart(
+            2,
+            "0"
+        );
 
 
     const dia =
         String(
             hoje.getDate()
-        ).padStart(2, "0");
+        ).padStart(
+            2,
+            "0"
+        );
 
 
     return `${ano}-${mes}-${dia}`;
@@ -196,7 +306,9 @@ function hojeISO() {
 }
 
 
-function formatarData(data) {
+function formatarData(
+    data
+) {
 
     if (!data) {
 
@@ -209,7 +321,8 @@ function formatarData(data) {
         ano,
         mes,
         dia
-    ] = data.split("-");
+    ] =
+        data.split("-");
 
 
     return `${dia}/${mes}/${ano}`;
@@ -217,198 +330,33 @@ function formatarData(data) {
 }
 
 
-// CARREGAR TODOS OS DADOS
+function buscarVeiculo(
+    id
+) {
 
-async function carregarDados() {
+    return veiculos.find(
 
-    try {
+        veiculo =>
+            veiculo.id === id
 
-        const [
-            responseVeiculos,
-            responseManutencoes,
-            responseMotoristas
-        ] = await Promise.all([
-
-            fetch("/veiculos"),
-
-            fetch("/manutencoes/ativas"),
-
-            fetch("/motoristas")
-
-        ]);
-
-
-        if (!responseVeiculos.ok) {
-
-            throw new Error(
-                "Erro ao carregar veículos."
-            );
-
-        }
-
-
-        if (!responseManutencoes.ok) {
-
-            throw new Error(
-                "Erro ao carregar manutenções."
-            );
-
-        }
-
-
-        if (!responseMotoristas.ok) {
-
-            throw new Error(
-                "Erro ao carregar motoristas."
-            );
-
-        }
-
-
-        veiculos =
-            await responseVeiculos.json();
-
-
-        manutencoesAtivas =
-            await responseManutencoes.json();
-
-
-        motoristas =
-            await responseMotoristas.json();
-
-
-        atualizarIndicadores();
-
-
-        renderizarVeiculos(
-            veiculos
-        );
-
-
-        renderizarManutencoes();
-
-
-        renderizarMotoristas(
-            motoristas
-        );
-
-
-        atualizarSelectManutencao();
-
-
-    } catch (error) {
-
-        console.error(
-            "Erro ao carregar dados:",
-            error
-        );
-
-
-        if (tableBody) {
-
-            tableBody.innerHTML = `
-
-                <tr>
-
-                    <td
-                        colspan="4"
-                        class="loading"
-                    >
-                        Erro ao carregar a frota.
-                    </td>
-
-                </tr>
-
-            `;
-
-        }
-
-    }
+    );
 
 }
 
 
-// INDICADORES
+function buscarMotorista(
+    id
+) {
 
-function atualizarIndicadores() {
+    return motoristas.find(
 
-    const veiculosAtivosNaBase =
-        veiculos.filter(
+        motorista =>
+            motorista.id === id
 
-            veiculo =>
-                veiculo.ativo
-
-        );
-
-
-    const quantidadeManutencoes =
-        manutencoesAtivas.length;
-
-
-    const quantidadeDisponiveis =
-        Math.max(
-
-            veiculosAtivosNaBase.length
-            -
-            quantidadeManutencoes,
-
-            0
-
-        );
-
-
-    if (totalVeiculos) {
-
-        totalVeiculos.textContent =
-            veiculos.length;
-
-    }
-
-
-    if (veiculosAtivos) {
-
-        veiculosAtivos.textContent =
-            quantidadeDisponiveis;
-
-    }
-
-
-    if (veiculosManutencao) {
-
-        veiculosManutencao.textContent =
-            quantidadeManutencoes;
-
-    }
-
-
-    if (maintenanceTotal) {
-
-        maintenanceTotal.textContent =
-            quantidadeManutencoes;
-
-    }
-
-
-    if (driversTotal) {
-
-        const motoristasAtivos =
-            motoristas.filter(
-
-                motorista =>
-                    motorista.ativo
-
-            );
-
-
-        driversTotal.textContent =
-            motoristasAtivos.length;
-
-    }
+    );
 
 }
 
-
-// BUSCAR MANUTENÇÃO ATIVA DE UM VEÍCULO
 
 function buscarManutencaoAtiva(
     veiculoId
@@ -427,9 +375,198 @@ function buscarManutencaoAtiva(
 }
 
 
-// RENDERIZAR FROTA
+// CARREGAR DADOS
 
-function renderizarVeiculos(lista) {
+async function carregarDados() {
+
+    try {
+
+        const [
+
+            responseVeiculos,
+
+            responseManutencoes,
+
+            responseMotoristas,
+
+            responseOperacoes
+
+        ] = await Promise.all([
+
+            fetch("/veiculos"),
+
+            fetch("/manutencoes/ativas"),
+
+            fetch("/motoristas"),
+
+            fetch("/operacoes")
+
+        ]);
+
+
+        if (
+            !responseVeiculos.ok
+            ||
+            !responseManutencoes.ok
+            ||
+            !responseMotoristas.ok
+            ||
+            !responseOperacoes.ok
+        ) {
+
+            throw new Error(
+                "Não foi possível carregar os dados."
+            );
+
+        }
+
+
+        veiculos =
+            await responseVeiculos.json();
+
+
+        manutencoesAtivas =
+            await responseManutencoes.json();
+
+
+        motoristas =
+            await responseMotoristas.json();
+
+
+        operacoes =
+            await responseOperacoes.json();
+
+
+        atualizarIndicadores();
+
+        renderizarVeiculos(
+            veiculos
+        );
+
+        renderizarManutencoes();
+
+        renderizarMotoristas(
+            motoristas
+        );
+
+        atualizarSelectManutencao();
+
+        atualizarSelectsOperacao();
+
+        aplicarFiltrosOperacao();
+
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao carregar dados:",
+            error
+        );
+
+    }
+
+}
+
+
+// INDICADORES
+
+function atualizarIndicadores() {
+
+    const ativos =
+        veiculos.filter(
+
+            veiculo =>
+                veiculo.ativo
+
+        );
+
+
+    const disponiveis =
+
+        ativos.length
+
+        -
+
+        manutencoesAtivas.length;
+
+
+    if (totalVeiculos) {
+
+        totalVeiculos.textContent =
+            veiculos.length;
+
+    }
+
+
+    if (veiculosAtivos) {
+
+        veiculosAtivos.textContent =
+            Math.max(
+                disponiveis,
+                0
+            );
+
+    }
+
+
+    if (veiculosManutencao) {
+
+        veiculosManutencao.textContent =
+            manutencoesAtivas.length;
+
+    }
+
+
+    if (maintenanceTotal) {
+
+        maintenanceTotal.textContent =
+            manutencoesAtivas.length;
+
+    }
+
+
+    if (driversTotal) {
+
+        driversTotal.textContent =
+
+            motoristas.filter(
+
+                motorista =>
+                    motorista.ativo
+
+            ).length;
+
+    }
+
+
+    if (operacaoHoje) {
+
+        const hoje =
+            hojeISO();
+
+
+        const registrosHoje =
+            operacoes.filter(
+
+                operacao =>
+                    operacao.data === hoje
+
+            );
+
+
+        operacaoHoje.textContent =
+            registrosHoje.length;
+
+    }
+
+}
+
+
+// FROTA
+
+function renderizarVeiculos(
+    lista
+) {
 
     if (!tableBody) {
 
@@ -442,7 +579,9 @@ function renderizarVeiculos(lista) {
         "";
 
 
-    if (lista.length === 0) {
+    if (
+        lista.length === 0
+    ) {
 
         tableBody.innerHTML = `
 
@@ -498,7 +637,9 @@ function renderizarVeiculos(lista) {
 
             }
 
-            else if (veiculo.ativo) {
+            else if (
+                veiculo.ativo
+            ) {
 
                 statusHTML = `
 
@@ -576,7 +717,7 @@ function renderizarVeiculos(lista) {
 }
 
 
-// RENDERIZAR MANUTENÇÕES
+// MANUTENÇÕES
 
 function renderizarManutencoes() {
 
@@ -623,14 +764,8 @@ function renderizarManutencoes() {
         manutencao => {
 
             const veiculo =
-                veiculos.find(
-
-                    item =>
-
-                        item.id
-                        ===
-                        manutencao.veiculo_id
-
+                buscarVeiculo(
+                    manutencao.veiculo_id
                 );
 
 
@@ -646,10 +781,10 @@ function renderizarManutencoes() {
 
                     ${
                         veiculo
-                            ?
-                            veiculo.placa
-                            :
-                            "Não encontrado"
+                        ?
+                        veiculo.placa
+                        :
+                        "Não encontrado"
                     }
 
                 </td>
@@ -689,14 +824,20 @@ function renderizarManutencoes() {
                 <td>
 
                     <button
+
                         class="
                             action-button
                             finish-maintenance
                         "
+
                         data-maintenance-id="${manutencao.id}"
+
                         type="button"
+
                     >
+
                         Registrar retorno
+
                     </button>
 
                 </td>
@@ -714,8 +855,6 @@ function renderizarManutencoes() {
 
 }
 
-
-// ATUALIZAR SELECT DE MANUTENÇÃO
 
 function atualizarSelectManutencao() {
 
@@ -738,23 +877,13 @@ function atualizarSelectManutencao() {
     const disponiveis =
         veiculos.filter(
 
-            veiculo => {
+            veiculo =>
 
-                const manutencao =
-                    buscarManutencaoAtiva(
-                        veiculo.id
-                    );
-
-
-                return (
-
-                    veiculo.ativo
-                    &&
-                    !manutencao
-
-                );
-
-            }
+                veiculo.ativo
+                &&
+                !buscarManutencaoAtiva(
+                    veiculo.id
+                )
 
         );
 
@@ -788,9 +917,11 @@ function atualizarSelectManutencao() {
 }
 
 
-// RENDERIZAR MOTORISTAS
+// MOTORISTAS
 
-function renderizarMotoristas(lista) {
+function renderizarMotoristas(
+    lista
+) {
 
     if (!driversTable) {
 
@@ -803,24 +934,9 @@ function renderizarMotoristas(lista) {
         "";
 
 
-    const motoristasAtivos =
-        motoristas.filter(
-
-            motorista =>
-                motorista.ativo
-
-        );
-
-
-    if (driversTotal) {
-
-        driversTotal.textContent =
-            motoristasAtivos.length;
-
-    }
-
-
-    if (lista.length === 0) {
+    if (
+        lista.length === 0
+    ) {
 
         driversTable.innerHTML = `
 
@@ -858,9 +974,9 @@ function renderizarMotoristas(lista) {
                 <td>
 
                     <strong>
-                        ${
-                            motorista.nome
-                        }
+
+                        ${motorista.nome}
+
                     </strong>
 
                 </td>
@@ -884,20 +1000,20 @@ function renderizarMotoristas(lista) {
                             badge
                             ${
                                 motorista.ativo
-                                    ?
-                                    "badge-active"
-                                    :
-                                    "badge-inactive"
+                                ?
+                                "badge-active"
+                                :
+                                "badge-inactive"
                             }
                         "
                     >
 
                         ${
                             motorista.ativo
-                                ?
-                                "Ativo"
-                                :
-                                "Inativo"
+                            ?
+                            "Ativo"
+                            :
+                            "Inativo"
                         }
 
                     </span>
@@ -908,21 +1024,26 @@ function renderizarMotoristas(lista) {
                 <td>
 
                     <button
+
                         class="
                             action-button
                             toggle-driver
                         "
+
                         data-driver-id="${motorista.id}"
+
                         data-driver-active="${motorista.ativo}"
+
                         type="button"
+
                     >
 
                         ${
                             motorista.ativo
-                                ?
-                                "Inativar"
-                                :
-                                "Reativar"
+                            ?
+                            "Inativar"
+                            :
+                            "Reativar"
                         }
 
                     </button>
@@ -933,6 +1054,370 @@ function renderizarMotoristas(lista) {
 
 
             driversTable.appendChild(
+                row
+            );
+
+        }
+
+    );
+
+}
+
+
+// OPERAÇÕES
+
+function atualizarSelectsOperacao() {
+
+    if (
+        !operationVehicle
+        ||
+        !operationDriver
+    ) {
+
+        return;
+
+    }
+
+
+    operationVehicle.innerHTML = `
+
+        <option value="">
+            Selecione uma placa
+        </option>
+
+    `;
+
+
+    const veiculosDisponiveis =
+        veiculos.filter(
+
+            veiculo =>
+
+                veiculo.ativo
+                &&
+                !buscarManutencaoAtiva(
+                    veiculo.id
+                )
+
+        );
+
+
+    veiculosDisponiveis.forEach(
+
+        veiculo => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            option.value =
+                veiculo.id;
+
+
+            option.textContent =
+                veiculo.placa;
+
+
+            operationVehicle.appendChild(
+                option
+            );
+
+        }
+
+    );
+
+
+    operationDriver.innerHTML = `
+
+        <option value="">
+            Selecione um motorista
+        </option>
+
+    `;
+
+
+    motoristas
+        .filter(
+
+            motorista =>
+                motorista.ativo
+
+        )
+        .forEach(
+
+            motorista => {
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+
+                option.value =
+                    motorista.id;
+
+
+                option.textContent =
+                    motorista.nome;
+
+
+                operationDriver.appendChild(
+                    option
+                );
+
+            }
+
+        );
+
+}
+
+
+function aplicarFiltrosOperacao() {
+
+    if (!operationsTable) {
+
+        return;
+
+    }
+
+
+    const dataSelecionada =
+        operationFilterDate
+        ?
+        operationFilterDate.value
+        :
+        "";
+
+
+    const turnoSelecionado =
+        operationFilterShift
+        ?
+        operationFilterShift.value
+        :
+        "";
+
+
+    const resultado =
+        operacoes.filter(
+
+            operacao => {
+
+                const correspondeData =
+
+                    !dataSelecionada
+
+                    ||
+
+                    operacao.data
+                    ===
+                    dataSelecionada;
+
+
+                const correspondeTurno =
+
+                    !turnoSelecionado
+
+                    ||
+
+                    operacao.turno
+                    ===
+                    turnoSelecionado;
+
+
+                return (
+
+                    correspondeData
+
+                    &&
+
+                    correspondeTurno
+
+                );
+
+            }
+
+        );
+
+
+    renderizarOperacoes(
+        resultado
+    );
+
+}
+
+
+function renderizarOperacoes(
+    lista
+) {
+
+    if (!operationsTable) {
+
+        return;
+
+    }
+
+
+    operationsTable.innerHTML =
+        "";
+
+
+    if (
+        lista.length === 0
+    ) {
+
+        operationsTable.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="6"
+                    class="loading"
+                >
+                    Nenhum registro encontrado.
+                </td>
+
+            </tr>
+
+        `;
+
+
+        return;
+
+    }
+
+
+    lista.forEach(
+
+        operacao => {
+
+            const veiculo =
+                buscarVeiculo(
+                    operacao.veiculo_id
+                );
+
+
+            const motorista =
+                buscarMotorista(
+                    operacao.motorista_id
+                );
+
+
+            const configuracaoStatus =
+
+                statusOperacao[
+                    operacao.status
+                ]
+
+                ||
+
+                {
+                    texto:
+                        operacao.status,
+
+                    classe:
+                        "badge-operation"
+                };
+
+
+            const row =
+                document.createElement(
+                    "tr"
+                );
+
+
+            row.innerHTML = `
+
+                <td class="plate">
+
+                    ${
+                        veiculo
+                        ?
+                        veiculo.placa
+                        :
+                        "—"
+                    }
+
+                </td>
+
+
+                <td>
+
+                    ${
+                        motorista
+                        ?
+                        motorista.nome
+                        :
+                        "—"
+                    }
+
+                </td>
+
+
+                <td>
+
+                    ${
+                        operacao.rota_id
+                        ||
+                        "—"
+                    }
+
+                </td>
+
+
+                <td>
+
+                    ${
+                        operacao.turno
+                    }
+
+                </td>
+
+
+                <td>
+
+                    <span
+                        class="
+                            badge
+                            ${configuracaoStatus.classe}
+                        "
+                    >
+
+                        ${
+                            configuracaoStatus.texto
+                        }
+
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    <button
+
+                        class="
+                            action-button
+                            delete-operation
+                        "
+
+                        data-operation-id="${operacao.id}"
+
+                        type="button"
+
+                    >
+
+                        Excluir
+
+                    </button>
+
+                </td>
+
+            `;
+
+
+            operationsTable.appendChild(
                 row
             );
 
@@ -956,7 +1441,9 @@ function mostrarTela(
 
         driversView,
 
-        maintenanceView
+        maintenanceView,
+
+        operationsView
 
     ];
 
@@ -967,7 +1454,9 @@ function mostrarTela(
 
         menuDrivers,
 
-        menuMaintenance
+        menuMaintenance,
+
+        menuOperations
 
     ];
 
@@ -1026,155 +1515,163 @@ function mostrarTela(
 }
 
 
-if (menuDashboard) {
+menuDashboard?.addEventListener(
 
-    menuDashboard.addEventListener(
+    "click",
 
-        "click",
+    () =>
 
-        () => {
+        mostrarTela(
 
-            mostrarTela(
+            dashboardView,
 
-                dashboardView,
+            menuDashboard
 
-                menuDashboard
+        )
 
-            );
+);
 
-        }
 
-    );
+menuDrivers?.addEventListener(
 
-}
+    "click",
 
+    () =>
 
-if (menuDrivers) {
+        mostrarTela(
 
-    menuDrivers.addEventListener(
+            driversView,
 
-        "click",
+            menuDrivers
 
-        () => {
+        )
 
-            mostrarTela(
+);
 
-                driversView,
 
-                menuDrivers
+menuMaintenance?.addEventListener(
 
-            );
+    "click",
 
-        }
+    () =>
 
-    );
+        mostrarTela(
 
-}
+            maintenanceView,
 
+            menuMaintenance
 
-if (menuMaintenance) {
+        )
 
-    menuMaintenance.addEventListener(
+);
 
-        "click",
 
-        () => {
+menuOperations?.addEventListener(
 
-            mostrarTela(
+    "click",
 
-                maintenanceView,
+    () => {
 
-                menuMaintenance
+        mostrarTela(
 
-            );
+            operationsView,
 
-        }
+            menuOperations
 
-    );
+        );
 
-}
 
+        aplicarFiltrosOperacao();
 
-// BUSCA - FROTA
+    }
 
-if (searchInput) {
+);
 
-    searchInput.addEventListener(
 
-        "input",
+// BUSCAS E FILTROS
 
-        event => {
+searchInput?.addEventListener(
 
-            const busca =
-                event.target.value
-                    .trim()
-                    .toUpperCase();
+    "input",
 
+    event => {
 
-            const resultado =
-                veiculos.filter(
+        const busca =
+            event.target.value
+                .trim()
+                .toUpperCase();
 
-                    veiculo =>
 
-                        veiculo.placa
-                            .toUpperCase()
-                            .includes(
-                                busca
-                            )
+        renderizarVeiculos(
 
-                );
+            veiculos.filter(
 
+                veiculo =>
 
-            renderizarVeiculos(
-                resultado
-            );
+                    veiculo.placa
+                        .toUpperCase()
+                        .includes(
+                            busca
+                        )
 
-        }
+            )
 
-    );
+        );
 
-}
+    }
 
+);
 
-// BUSCA - MOTORISTAS
 
-if (driverSearchInput) {
+driverSearchInput?.addEventListener(
 
-    driverSearchInput.addEventListener(
+    "input",
 
-        "input",
+    event => {
 
-        event => {
+        const busca =
+            event.target.value
+                .trim()
+                .toLowerCase();
 
-            const busca =
-                event.target.value
-                    .trim()
-                    .toLowerCase();
 
+        renderizarMotoristas(
 
-            const resultado =
-                motoristas.filter(
+            motoristas.filter(
 
-                    motorista =>
+                motorista =>
 
-                        motorista.nome
-                            .toLowerCase()
-                            .includes(
-                                busca
-                            )
+                    motorista.nome
+                        .toLowerCase()
+                        .includes(
+                            busca
+                        )
 
-                );
+            )
 
+        );
 
-            renderizarMotoristas(
-                resultado
-            );
+    }
 
-        }
+);
 
-    );
 
-}
+operationFilterDate?.addEventListener(
+
+    "change",
+
+    aplicarFiltrosOperacao
+
+);
+
+
+operationFilterShift?.addEventListener(
+
+    "change",
+
+    aplicarFiltrosOperacao
+
+);
 
 
 // MODAL VEÍCULO
@@ -1190,19 +1687,6 @@ function abrirModalVeiculo() {
 
     vehicleFormMessage.textContent =
         "";
-
-
-    setTimeout(
-
-        () => {
-
-            vehiclePlate.focus();
-
-        },
-
-        100
-
-    );
 
 }
 
@@ -1225,19 +1709,19 @@ function fecharModalVeiculo() {
 }
 
 
-openVehicleModal.addEventListener(
+openVehicleModal?.addEventListener(
     "click",
     abrirModalVeiculo
 );
 
 
-closeVehicleModal.addEventListener(
+closeVehicleModal?.addEventListener(
     "click",
     fecharModalVeiculo
 );
 
 
-cancelVehicleModal.addEventListener(
+cancelVehicleModal?.addEventListener(
     "click",
     fecharModalVeiculo
 );
@@ -1245,7 +1729,7 @@ cancelVehicleModal.addEventListener(
 
 // CADASTRAR VEÍCULO
 
-vehicleForm.addEventListener(
+vehicleForm?.addEventListener(
 
     "submit",
 
@@ -1256,10 +1740,6 @@ vehicleForm.addEventListener(
 
         saveVehicleButton.disabled =
             true;
-
-
-        saveVehicleButton.textContent =
-            "Cadastrando...";
 
 
         try {
@@ -1274,14 +1754,12 @@ vehicleForm.addEventListener(
                         method:
                             "POST",
 
-
                         headers: {
 
                             "Content-Type":
                                 "application/json"
 
                         },
-
 
                         body:
                             JSON.stringify({
@@ -1316,11 +1794,7 @@ vehicleForm.addEventListener(
             if (!response.ok) {
 
                 throw new Error(
-
                     data.detail
-                    ||
-                    "Erro ao cadastrar veículo."
-
                 );
 
             }
@@ -1337,19 +1811,12 @@ vehicleForm.addEventListener(
             vehicleFormMessage.textContent =
                 error.message;
 
+        }
 
-            vehicleFormMessage.className =
-                "form-message error";
-
-
-        } finally {
+        finally {
 
             saveVehicleButton.disabled =
                 false;
-
-
-            saveVehicleButton.textContent =
-                "Cadastrar veículo";
 
         }
 
@@ -1358,66 +1825,52 @@ vehicleForm.addEventListener(
 );
 
 
-// MODAL MANUTENÇÃO
+// MOTORISTA
 
-function abrirModalManutencao() {
+function abrirModalMotorista() {
 
-    maintenanceEntryDate.value =
-        hojeISO();
-
-
-    maintenanceModal
-        .classList
-        .add(
-            "active"
-        );
+    driverModal.classList.add(
+        "active"
+    );
 
 
-    maintenanceFormMessage.textContent =
+    driverFormMessage.textContent =
         "";
 
 }
 
 
-function fecharModalManutencao() {
+function fecharModalMotorista() {
 
-    maintenanceModal
-        .classList
-        .remove(
-            "active"
-        );
+    driverModal.classList.remove(
+        "active"
+    );
 
 
-    maintenanceForm.reset();
-
-
-    maintenanceFormMessage.textContent =
-        "";
+    driverForm.reset();
 
 }
 
 
-openMaintenanceModal.addEventListener(
+openDriverModal?.addEventListener(
     "click",
-    abrirModalManutencao
+    abrirModalMotorista
 );
 
 
-closeMaintenanceModal.addEventListener(
+closeDriverModal?.addEventListener(
     "click",
-    fecharModalManutencao
+    fecharModalMotorista
 );
 
 
-cancelMaintenanceModal.addEventListener(
+cancelDriverModal?.addEventListener(
     "click",
-    fecharModalManutencao
+    fecharModalMotorista
 );
 
 
-// CADASTRAR MANUTENÇÃO
-
-maintenanceForm.addEventListener(
+driverForm?.addEventListener(
 
     "submit",
 
@@ -1426,12 +1879,201 @@ maintenanceForm.addEventListener(
         event.preventDefault();
 
 
-        saveMaintenanceButton.disabled =
-            true;
+        try {
+
+            const response =
+                await fetch(
+
+                    "/motoristas",
+
+                    {
+
+                        method:
+                            "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json"
+
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                nome:
+                                    driverName.value
+                                        .trim(),
+
+                                telefone:
+                                    driverPhone.value
+                                        .trim()
+                                    ||
+                                    null,
+
+                                ativo:
+                                    true
+
+                            })
+
+                    }
+
+                );
 
 
-        saveMaintenanceButton.textContent =
-            "Registrando...";
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.detail
+                );
+
+            }
+
+
+            await carregarDados();
+
+
+            fecharModalMotorista();
+
+
+        } catch (error) {
+
+            driverFormMessage.textContent =
+                error.message;
+
+        }
+
+    }
+
+);
+
+
+// ATIVAR / INATIVAR MOTORISTA
+
+driversTable?.addEventListener(
+
+    "click",
+
+    async event => {
+
+        const button =
+            event.target.closest(
+                ".toggle-driver"
+            );
+
+
+        if (!button) {
+
+            return;
+
+        }
+
+
+        const id =
+            button.dataset.driverId;
+
+
+        const ativo =
+
+            button.dataset.driverActive
+
+            ===
+
+            "true";
+
+
+        await fetch(
+
+            `/motoristas/${id}`,
+
+            {
+
+                method:
+                    "PATCH",
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json"
+
+                },
+
+                body:
+                    JSON.stringify({
+
+                        ativo:
+                            !ativo
+
+                    })
+
+            }
+
+        );
+
+
+        await carregarDados();
+
+    }
+
+);
+
+
+// MANUTENÇÃO
+
+function abrirModalManutencao() {
+
+    maintenanceEntryDate.value =
+        hojeISO();
+
+
+    maintenanceModal.classList.add(
+        "active"
+    );
+
+}
+
+
+function fecharModalManutencao() {
+
+    maintenanceModal.classList.remove(
+        "active"
+    );
+
+
+    maintenanceForm.reset();
+
+}
+
+
+openMaintenanceModal?.addEventListener(
+    "click",
+    abrirModalManutencao
+);
+
+
+closeMaintenanceModal?.addEventListener(
+    "click",
+    fecharModalManutencao
+);
+
+
+cancelMaintenanceModal?.addEventListener(
+    "click",
+    fecharModalManutencao
+);
+
+
+maintenanceForm?.addEventListener(
+
+    "submit",
+
+    async event => {
+
+        event.preventDefault();
 
 
         try {
@@ -1446,14 +2088,12 @@ maintenanceForm.addEventListener(
                         method:
                             "POST",
 
-
                         headers: {
 
                             "Content-Type":
                                 "application/json"
 
                         },
-
 
                         body:
                             JSON.stringify({
@@ -1489,11 +2129,7 @@ maintenanceForm.addEventListener(
             if (!response.ok) {
 
                 throw new Error(
-
                     data.detail
-                    ||
-                    "Erro ao registrar manutenção."
-
                 );
 
             }
@@ -1510,20 +2146,6 @@ maintenanceForm.addEventListener(
             maintenanceFormMessage.textContent =
                 error.message;
 
-
-            maintenanceFormMessage.className =
-                "form-message error";
-
-
-        } finally {
-
-            saveMaintenanceButton.disabled =
-                false;
-
-
-            saveMaintenanceButton.textContent =
-                "Registrar manutenção";
-
         }
 
     }
@@ -1533,7 +2155,7 @@ maintenanceForm.addEventListener(
 
 // FINALIZAR MANUTENÇÃO
 
-maintenanceTable.addEventListener(
+maintenanceTable?.addEventListener(
 
     "click",
 
@@ -1552,15 +2174,271 @@ maintenanceTable.addEventListener(
         }
 
 
-        const id =
-            button.dataset
-                .maintenanceId;
+        if (
+            !window.confirm(
+                "Confirmar retorno deste veículo?"
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        await fetch(
+
+            `/manutencoes/${button.dataset.maintenanceId}/finalizar`,
+
+            {
+
+                method:
+                    "PATCH",
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json"
+
+                },
+
+                body:
+                    JSON.stringify({
+
+                        data_retorno:
+                            hojeISO()
+
+                    })
+
+            }
+
+        );
+
+
+        await carregarDados();
+
+    }
+
+);
+
+
+// MODAL OPERAÇÃO
+
+function abrirModalOperacao() {
+
+    operationDate.value =
+        operationFilterDate.value
+        ||
+        hojeISO();
+
+
+    operationModal.classList.add(
+        "active"
+    );
+
+
+    operationFormMessage.textContent =
+        "";
+
+}
+
+
+function fecharModalOperacao() {
+
+    operationModal.classList.remove(
+        "active"
+    );
+
+
+    operationForm.reset();
+
+}
+
+
+openOperationModal?.addEventListener(
+    "click",
+    abrirModalOperacao
+);
+
+
+closeOperationModal?.addEventListener(
+    "click",
+    fecharModalOperacao
+);
+
+
+cancelOperationModal?.addEventListener(
+    "click",
+    fecharModalOperacao
+);
+
+
+// CADASTRAR OPERAÇÃO
+
+operationForm?.addEventListener(
+
+    "submit",
+
+    async event => {
+
+        event.preventDefault();
+
+
+        saveOperationButton.disabled =
+            true;
+
+
+        saveOperationButton.textContent =
+            "Registrando...";
+
+
+        try {
+
+            const response =
+                await fetch(
+
+                    "/operacoes",
+
+                    {
+
+                        method:
+                            "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json"
+
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                data:
+                                    operationDate.value,
+
+                                turno:
+                                    operationShift.value,
+
+                                veiculo_id:
+                                    operationVehicle.value
+                                    ?
+                                    Number(
+                                        operationVehicle.value
+                                    )
+                                    :
+                                    null,
+
+                                motorista_id:
+                                    operationDriver.value
+                                    ?
+                                    Number(
+                                        operationDriver.value
+                                    )
+                                    :
+                                    null,
+
+                                rota_id:
+                                    operationRoute.value
+                                        .trim()
+                                    ||
+                                    null,
+
+                                status:
+                                    operationStatus.value,
+
+                                observacao:
+                                    operationObservation.value
+                                        .trim()
+                                    ||
+                                    null,
+
+                                origem:
+                                    "MANUAL"
+
+                            })
+
+                    }
+
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+
+                    data.detail
+
+                    ||
+
+                    "Erro ao registrar operação."
+
+                );
+
+            }
+
+
+            await carregarDados();
+
+
+            fecharModalOperacao();
+
+
+        } catch (error) {
+
+            operationFormMessage.textContent =
+                error.message;
+
+
+            operationFormMessage.className =
+                "form-message error";
+
+        }
+
+        finally {
+
+            saveOperationButton.disabled =
+                false;
+
+
+            saveOperationButton.textContent =
+                "Registrar operação";
+
+        }
+
+    }
+
+);
+
+
+// EXCLUIR OPERAÇÃO
+
+operationsTable?.addEventListener(
+
+    "click",
+
+    async event => {
+
+        const button =
+            event.target.closest(
+                ".delete-operation"
+            );
+
+
+        if (!button) {
+
+            return;
+
+        }
 
 
         const confirmar =
             window.confirm(
 
-                "Confirmar o retorno deste veículo?"
+                "Deseja excluir este registro da operação?"
 
             );
 
@@ -1572,345 +2450,34 @@ maintenanceTable.addEventListener(
         }
 
 
-        try {
+        const response =
+            await fetch(
 
-            const response =
-                await fetch(
+                `/operacoes/${button.dataset.operationId}`,
 
-                    `/manutencoes/${id}/finalizar`,
+                {
 
-                    {
+                    method:
+                        "DELETE"
 
-                        method:
-                            "PATCH",
+                }
 
-
-                        headers: {
-
-                            "Content-Type":
-                                "application/json"
-
-                        },
+            );
 
 
-                        body:
-                            JSON.stringify({
-
-                                data_retorno:
-                                    hojeISO()
-
-                            })
-
-                    }
-
-                );
-
-
-            const data =
-                await response.json();
-
-
-            if (!response.ok) {
-
-                throw new Error(
-
-                    data.detail
-                    ||
-                    "Erro ao finalizar manutenção."
-
-                );
-
-            }
-
-
-            await carregarDados();
-
-
-        } catch (error) {
+        if (!response.ok) {
 
             alert(
-                error.message
+                "Não foi possível excluir o registro."
             );
 
-        }
-
-    }
-
-);
-
-
-// MODAL MOTORISTA
-
-function abrirModalMotorista() {
-
-    driverModal
-        .classList
-        .add(
-            "active"
-        );
-
-
-    driverFormMessage.textContent =
-        "";
-
-
-    setTimeout(
-
-        () => {
-
-            driverName.focus();
-
-        },
-
-        100
-
-    );
-
-}
-
-
-function fecharModalMotorista() {
-
-    driverModal
-        .classList
-        .remove(
-            "active"
-        );
-
-
-    driverForm.reset();
-
-
-    driverFormMessage.textContent =
-        "";
-
-}
-
-
-openDriverModal.addEventListener(
-    "click",
-    abrirModalMotorista
-);
-
-
-closeDriverModal.addEventListener(
-    "click",
-    fecharModalMotorista
-);
-
-
-cancelDriverModal.addEventListener(
-    "click",
-    fecharModalMotorista
-);
-
-
-// CADASTRAR MOTORISTA
-
-driverForm.addEventListener(
-
-    "submit",
-
-    async event => {
-
-        event.preventDefault();
-
-
-        saveDriverButton.disabled =
-            true;
-
-
-        saveDriverButton.textContent =
-            "Cadastrando...";
-
-
-        try {
-
-            const response =
-                await fetch(
-
-                    "/motoristas",
-
-                    {
-
-                        method:
-                            "POST",
-
-
-                        headers: {
-
-                            "Content-Type":
-                                "application/json"
-
-                        },
-
-
-                        body:
-                            JSON.stringify({
-
-                                nome:
-                                    driverName.value
-                                        .trim(),
-
-                                telefone:
-                                    driverPhone.value
-                                        .trim()
-                                    ||
-                                    null,
-
-                                ativo:
-                                    true
-
-                            })
-
-                    }
-
-                );
-
-
-            const data =
-                await response.json();
-
-
-            if (!response.ok) {
-
-                throw new Error(
-
-                    data.detail
-                    ||
-                    "Erro ao cadastrar motorista."
-
-                );
-
-            }
-
-
-            await carregarDados();
-
-
-            fecharModalMotorista();
-
-
-        } catch (error) {
-
-            driverFormMessage.textContent =
-                error.message;
-
-
-            driverFormMessage.className =
-                "form-message error";
-
-
-        } finally {
-
-            saveDriverButton.disabled =
-                false;
-
-
-            saveDriverButton.textContent =
-                "Cadastrar motorista";
-
-        }
-
-    }
-
-);
-
-
-// ATIVAR / INATIVAR MOTORISTA
-
-driversTable.addEventListener(
-
-    "click",
-
-    async event => {
-
-        const button =
-            event.target.closest(
-                ".toggle-driver"
-            );
-
-
-        if (!button) {
 
             return;
 
         }
 
 
-        const id =
-            button.dataset
-                .driverId;
-
-
-        const ativo =
-            button.dataset
-                .driverActive
-            ===
-            "true";
-
-
-        try {
-
-            const response =
-                await fetch(
-
-                    `/motoristas/${id}`,
-
-                    {
-
-                        method:
-                            "PATCH",
-
-
-                        headers: {
-
-                            "Content-Type":
-                                "application/json"
-
-                        },
-
-
-                        body:
-                            JSON.stringify({
-
-                                ativo:
-                                    !ativo
-
-                            })
-
-                    }
-
-                );
-
-
-            const data =
-                await response.json();
-
-
-            if (!response.ok) {
-
-                throw new Error(
-
-                    data.detail
-                    ||
-                    "Erro ao atualizar motorista."
-
-                );
-
-            }
-
-
-            await carregarDados();
-
-
-        } catch (error) {
-
-            alert(
-                error.message
-            );
-
-        }
+        await carregarDados();
 
     }
 
@@ -1919,70 +2486,64 @@ driversTable.addEventListener(
 
 // FECHAR MODAIS CLICANDO FORA
 
-vehicleModal.addEventListener(
+const modais = [
 
-    "click",
+    [
+        vehicleModal,
+        fecharModalVeiculo
+    ],
 
-    event => {
+    [
+        driverModal,
+        fecharModalMotorista
+    ],
 
-        if (
-            event.target
-            ===
-            vehicleModal
-        ) {
+    [
+        maintenanceModal,
+        fecharModalManutencao
+    ],
 
-            fecharModalVeiculo();
+    [
+        operationModal,
+        fecharModalOperacao
+    ]
 
-        }
-
-    }
-
-);
-
-
-maintenanceModal.addEventListener(
-
-    "click",
-
-    event => {
-
-        if (
-            event.target
-            ===
-            maintenanceModal
-        ) {
-
-            fecharModalManutencao();
-
-        }
-
-    }
-
-);
+];
 
 
-driverModal.addEventListener(
+modais.forEach(
 
-    "click",
+    ([
+        modal,
+        fechar
+    ]) => {
 
-    event => {
+        modal?.addEventListener(
 
-        if (
-            event.target
-            ===
-            driverModal
-        ) {
+            "click",
 
-            fecharModalMotorista();
+            event => {
 
-        }
+                if (
+                    event.target
+                    ===
+                    modal
+                ) {
+
+                    fechar();
+
+                }
+
+            }
+
+        );
 
     }
 
 );
 
 
-// ESC FECHA TODOS OS MODAIS
+// ESC FECHA MODAIS
 
 document.addEventListener(
 
@@ -2003,9 +2564,11 @@ document.addEventListener(
 
         fecharModalVeiculo();
 
+        fecharModalMotorista();
+
         fecharModalManutencao();
 
-        fecharModalMotorista();
+        fecharModalOperacao();
 
     }
 
@@ -2013,5 +2576,13 @@ document.addEventListener(
 
 
 // INICIALIZAÇÃO
+
+if (operationFilterDate) {
+
+    operationFilterDate.value =
+        hojeISO();
+
+}
+
 
 carregarDados();

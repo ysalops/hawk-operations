@@ -86,6 +86,7 @@
 
             <button
                 class="menu-item"
+                id="menuOperations"
                 type="button"
             >
                 <span>📍</span>
@@ -637,9 +638,149 @@
 
         </section>
 
-    </main>
+    <!-- OPERAÇÃO -->
+
+    <section
+        class="app-view"
+        id="operationsView"
+    >
+
+        <header class="topbar">
+
+            <div>
+
+                <p class="eyebrow">
+                    CONTROLE OPERACIONAL
+                </p>
+
+                <h2>
+                    Operação diária
+                </h2>
+
+                <p class="subtitle">
+                    Acompanhe veículos, motoristas e rotas do turno.
+                </p>
+
+            </div>
 
 
+            <button
+                class="primary-button"
+                id="openOperationModal"
+                type="button"
+            >
+                + Registrar operação
+            </button>
+
+        </header>
+
+
+        <section class="operation-filters">
+
+            <div class="form-group">
+
+                <label for="operationFilterDate">
+                    Data
+                </label>
+
+                <input
+                    id="operationFilterDate"
+                    type="date"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="operationFilterShift">
+                    Turno
+                </label>
+
+                <select id="operationFilterShift">
+
+                    <option value="">
+                        Todos
+                    </option>
+
+                    <option value="Manhã">
+                        Manhã
+                    </option>
+
+                    <option value="Tarde">
+                        Tarde
+                    </option>
+
+                    <option value="Noite">
+                        Noite
+                    </option>
+
+                </select>
+
+            </div>
+
+        </section>
+
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h3>
+                        Registros da operação
+                    </h3>
+
+                    <p>
+                        Veículos e motoristas registrados no período selecionado.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Placa</th>
+                            <th>Motorista</th>
+                            <th>Rota</th>
+                            <th>Turno</th>
+                            <th>Status</th>
+                            <th>Ação</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="operationsTable">
+
+                        <tr>
+
+                            <td
+                                colspan="6"
+                                class="loading"
+                            >
+                                Carregando operação...
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </section>
 
     <!-- MODAL NOVO VEÍCULO -->
 
@@ -799,7 +940,7 @@
 
     </div>
 
-
+    </main>
 
     <!-- MODAL NOVA MANUTENÇÃO -->
 
@@ -1051,6 +1192,244 @@
 
         </div>
 
+        <!--  MODAL OPERAÇÃO -->
+
+        <div
+            class="modal-overlay"
+            id="operationModal"
+        >
+
+            <div class="modal">
+
+                <div class="modal-header">
+
+                    <div>
+
+                        <p class="eyebrow">
+                            NOVO REGISTRO
+                        </p>
+
+                        <h3>
+                            Registrar operação
+                        </h3>
+
+                        <p>
+                            Vincule veículo, motorista e rota.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        class="modal-close"
+                        id="closeOperationModal"
+                        type="button"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+
+                <form id="operationForm">
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+
+                            <label for="operationDate">
+                                Data
+                            </label>
+
+                            <input
+                                id="operationDate"
+                                type="date"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="operationShift">
+                                Turno
+                            </label>
+
+                            <select
+                                id="operationShift"
+                                required
+                            >
+
+                                <option value="">
+                                    Selecione
+                                </option>
+
+                                <option value="Manhã">
+                                    Manhã
+                                </option>
+
+                                <option value="Tarde">
+                                    Tarde
+                                </option>
+
+                                <option value="Noite">
+                                    Noite
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="operationVehicle">
+                            Veículo
+                        </label>
+
+                        <select id="operationVehicle">
+
+                            <option value="">
+                                Selecione uma placa
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="operationDriver">
+                            Motorista
+                        </label>
+
+                        <select id="operationDriver">
+
+                            <option value="">
+                                Selecione um motorista
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="operationRoute">
+                            ID da rota
+                        </label>
+
+                        <input
+                            id="operationRoute"
+                            type="text"
+                            placeholder="Ex: 411142180"
+                            autocomplete="off"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="operationStatus">
+                            Status
+                        </label>
+
+                        <select
+                            id="operationStatus"
+                            required
+                        >
+
+                            <option value="">
+                                Selecione
+                            </option>
+
+                            <option value="CARREGANDO">
+                                ✅ Carregando
+                            </option>
+
+                            <option value="RESERVA_CARREGANDO">
+                                🚗 Reserva / Carregando
+                            </option>
+
+                            <option value="FOLGA">
+                                ⚠️ Folga
+                            </option>
+
+                            <option value="IMPEDIDO">
+                                🚫 Impedido
+                            </option>
+
+                            <option value="SEM_CARGA">
+                                📦 Sem carga
+                            </option>
+
+                            <option value="OUTRO_SERVICE">
+                                🔄 Outro service
+                            </option>
+
+                            <option value="INDISPONIVEL_MOTORISTA">
+                                ⏸️ Indisponível / Motorista
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="operationObservation">
+                            Observação
+                        </label>
+
+                        <textarea
+                            id="operationObservation"
+                            rows="3"
+                            placeholder="Informação adicional..."
+                        ></textarea>
+
+                    </div>
+
+
+                    <div
+                        class="form-message"
+                        id="operationFormMessage"
+                    ></div>
+
+
+                    <div class="modal-actions">
+
+                        <button
+                            class="secondary-button"
+                            id="cancelOperationModal"
+                            type="button"
+                        >
+                            Cancelar
+                        </button>
+
+
+                        <button
+                            class="primary-button"
+                            id="saveOperationButton"
+                            type="submit"
+                        >
+                            Registrar operação
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+    
     <script src="/static/js/app.js"></script>
 
 </body>
