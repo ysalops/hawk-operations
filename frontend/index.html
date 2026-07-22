@@ -20,9 +20,7 @@
 
 <body>
 
-    <!-- =========================
-         SIDEBAR
-    ========================== -->
+    <!-- SIDEBAR -->
 
     <aside class="sidebar">
 
@@ -34,9 +32,7 @@
 
             <div>
 
-                <h1>
-                    Hawk
-                </h1>
+                <h1>Hawk</h1>
 
                 <span>
                     Operations
@@ -49,69 +45,59 @@
 
         <nav class="menu">
 
-            <button class="menu-item active">
-
-                <span>
-                    ▦
-                </span>
-
+            <button
+                class="menu-item active"
+                id="menuDashboard"
+                type="button"
+            >
+                <span>▦</span>
                 Dashboard
-
             </button>
 
 
-            <button class="menu-item">
-
-                <span>
-                    🚚
-                </span>
-
+            <button
+                class="menu-item"
+                type="button"
+            >
+                <span>🚚</span>
                 Frota
-
             </button>
 
 
-            <button class="menu-item">
-
-                <span>
-                    👤
-                </span>
-
+            <button
+                class="menu-item"
+                type="button"
+            >
+                <span>👤</span>
                 Motoristas
-
             </button>
 
 
-            <button class="menu-item">
-
-                <span>
-                    🛠
-                </span>
-
+            <button
+                class="menu-item"
+                id="menuMaintenance"
+                type="button"
+            >
+                <span>🛠</span>
                 Manutenções
-
             </button>
 
 
-            <button class="menu-item">
-
-                <span>
-                    📍
-                </span>
-
+            <button
+                class="menu-item"
+                type="button"
+            >
+                <span>📍</span>
                 Operação
-
             </button>
 
 
-            <button class="menu-item">
-
-                <span>
-                    📄
-                </span>
-
+            <button
+                class="menu-item"
+                type="button"
+            >
+                <span>📄</span>
                 Panorama
-
             </button>
 
         </nav>
@@ -124,7 +110,6 @@
                 <div class="company-avatar">
                     HT
                 </div>
-
 
                 <div>
 
@@ -146,229 +131,191 @@
 
 
 
-    <!-- =========================
-         CONTEÚDO PRINCIPAL
-    ========================== -->
+    <!-- CONTEÚDO -->
 
     <main class="main-content">
 
 
-        <!-- HEADER -->
+        <!-- DASHBOARD -->
 
-        <header class="topbar">
+        <section
+            class="app-view active"
+            id="dashboardView"
+        >
 
-
-            <div>
-
-                <p class="eyebrow">
-                    VISÃO GERAL
-                </p>
-
-
-                <h2>
-                    Panorama Operacional
-                </h2>
-
-
-                <p class="subtitle">
-                    Acompanhe a frota e a operação em tempo real.
-                </p>
-
-            </div>
-
-
-            <div class="topbar-actions">
-
-
-                <div class="system-status">
-
-                    <span class="status-dot"></span>
-
-                    Sistema online
-
-                </div>
-
-
-                <button
-                    class="primary-button"
-                    id="openVehicleModal"
-                    type="button"
-                >
-                    + Novo veículo
-                </button>
-
-
-            </div>
-
-        </header>
-
-
-
-        <!-- =========================
-             CARDS
-        ========================== -->
-
-        <section class="cards">
-
-
-            <!-- TOTAL DA FROTA -->
-
-            <article class="card">
-
-                <div class="card-top">
-
-                    <span>
-                        Total da frota
-                    </span>
-
-
-                    <div class="card-icon">
-                        🚚
-                    </div>
-
-                </div>
-
-
-                <strong id="totalVeiculos">
-                    --
-                </strong>
-
-
-                <small>
-                    Veículos cadastrados
-                </small>
-
-            </article>
-
-
-
-            <!-- VEÍCULOS ATIVOS -->
-
-            <article class="card">
-
-                <div class="card-top">
-
-                    <span>Disponíveis</span>
-
-                    <div class="card-icon">
-                        ✓
-                    </div>
-
-                </div>
-
-
-                <strong id="veiculosAtivos">
-                    --
-                </strong>
-
-
-                <small>
-                    Disponíveis na base
-                </small>
-
-            </article>
-
-
-
-            <!-- MANUTENÇÃO -->
-
-            <article class="card">
-
-                <div class="card-top">
-
-                    <span>
-                        Em manutenção
-                    </span>
-
-
-                    <div class="card-icon">
-                        🛠
-                    </div>
-
-                </div>
-
-
-                <strong id="veiculosManutencao">
-                    0
-                </strong>
-
-
-                <small>
-                    Controle em desenvolvimento
-                </small>
-
-            </article>
-
-
-
-            <!-- OPERAÇÃO -->
-
-            <article class="card">
-
-                <div class="card-top">
-
-                    <span>
-                        Operação de hoje
-                    </span>
-
-
-                    <div class="card-icon">
-                        ↗
-                    </div>
-
-                </div>
-
-
-                <strong id="operacaoHoje">
-                    --
-                </strong>
-
-
-                <small>
-                    Aguardando integração
-                </small>
-
-            </article>
-
-
-        </section>
-
-
-
-        <!-- =========================
-             TABELA DA FROTA
-        ========================== -->
-
-        <section class="panel">
-
-
-            <div class="panel-header">
-
+            <header class="topbar">
 
                 <div>
 
-                    <h3>
-                        Frota cadastrada
-                    </h3>
+                    <p class="eyebrow">
+                        VISÃO GERAL
+                    </p>
 
+                    <h2>
+                        Panorama Operacional
+                    </h2>
 
-                    <p>
-                        Veículos atualmente registrados no sistema.
+                    <p class="subtitle">
+                        Acompanhe a frota e a operação em tempo real.
                     </p>
 
                 </div>
 
 
+                <div class="topbar-actions">
 
-                <div class="table-actions">
+                    <div class="system-status">
+
+                        <span class="status-dot"></span>
+
+                        Sistema online
+
+                    </div>
+
+
+                    <button
+                        class="primary-button"
+                        id="openVehicleModal"
+                        type="button"
+                    >
+                        + Novo veículo
+                    </button>
+
+                </div>
+
+            </header>
+
+
+
+            <!-- CARDS -->
+
+            <section class="cards">
+
+                <article class="card">
+
+                    <div class="card-top">
+
+                        <span>
+                            Total da frota
+                        </span>
+
+                        <div class="card-icon">
+                            🚚
+                        </div>
+
+                    </div>
+
+                    <strong id="totalVeiculos">
+                        --
+                    </strong>
+
+                    <small>
+                        Veículos cadastrados
+                    </small>
+
+                </article>
+
+
+                <article class="card">
+
+                    <div class="card-top">
+
+                        <span>
+                            Disponíveis
+                        </span>
+
+                        <div class="card-icon">
+                            ✓
+                        </div>
+
+                    </div>
+
+                    <strong id="veiculosAtivos">
+                        --
+                    </strong>
+
+                    <small>
+                        Disponíveis para operação
+                    </small>
+
+                </article>
+
+
+                <article class="card">
+
+                    <div class="card-top">
+
+                        <span>
+                            Em manutenção
+                        </span>
+
+                        <div class="card-icon">
+                            🛠
+                        </div>
+
+                    </div>
+
+                    <strong id="veiculosManutencao">
+                        0
+                    </strong>
+
+                    <small>
+                        Veículos indisponíveis
+                    </small>
+
+                </article>
+
+
+                <article class="card">
+
+                    <div class="card-top">
+
+                        <span>
+                            Operação de hoje
+                        </span>
+
+                        <div class="card-icon">
+                            ↗
+                        </div>
+
+                    </div>
+
+                    <strong id="operacaoHoje">
+                        --
+                    </strong>
+
+                    <small>
+                        Aguardando integração
+                    </small>
+
+                </article>
+
+            </section>
+
+
+
+            <!-- FROTA -->
+
+            <section class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h3>
+                            Frota cadastrada
+                        </h3>
+
+                        <p>
+                            Veículos atualmente registrados no sistema.
+                        </p>
+
+                    </div>
 
 
                     <div class="search-box">
 
-                        <span>
-                            ⌕
-                        </span>
-
+                        <span>⌕</span>
 
                         <input
                             id="searchInput"
@@ -379,94 +326,198 @@
 
                     </div>
 
+                </div>
+
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Placa</th>
+
+                                <th>Tipo</th>
+
+                                <th>Categoria</th>
+
+                                <th>Status</th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="veiculosTable">
+
+                            <tr>
+
+                                <td
+                                    colspan="4"
+                                    class="loading"
+                                >
+                                    Carregando frota...
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+        </section>
+
+
+
+        <!--  MANUTENÇÕES -->
+
+        <section
+            class="app-view"
+            id="maintenanceView"
+        >
+
+            <header class="topbar">
+
+                <div>
+
+                    <p class="eyebrow">
+                        GESTÃO DE FROTA
+                    </p>
+
+                    <h2>
+                        Manutenções
+                    </h2>
+
+                    <p class="subtitle">
+                        Controle os veículos indisponíveis e seus retornos.
+                    </p>
 
                 </div>
 
 
-            </div>
+                <button
+                    class="primary-button"
+                    id="openMaintenanceModal"
+                    type="button"
+                >
+                    + Nova manutenção
+                </button>
+
+            </header>
 
 
 
-            <div class="table-wrapper">
+            <section class="maintenance-summary">
 
+                <div class="maintenance-summary-content">
 
-                <table>
+                    <span class="maintenance-summary-icon">
+                        🛠
+                    </span>
 
+                    <div>
 
-                    <thead>
+                        <strong id="maintenanceTotal">
+                            0
+                        </strong>
 
-                        <tr>
+                        <span>
+                            veículos atualmente em manutenção
+                        </span>
 
-                            <th>
-                                Placa
-                            </th>
+                    </div>
 
-                            <th>
-                                Tipo
-                            </th>
+                </div>
 
-                            <th>
-                                Categoria
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                        </tr>
-
-                    </thead>
+            </section>
 
 
 
-                    <tbody id="veiculosTable">
+            <section class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h3>
+                            Veículos em manutenção
+                        </h3>
+
+                        <p>
+                            Acompanhe os motivos e previsões de retorno.
+                        </p>
+
+                    </div>
+
+                </div>
 
 
-                        <tr>
+                <div class="table-wrapper">
 
-                            <td
-                                colspan="4"
-                                class="loading"
-                            >
-                                Carregando frota...
-                            </td>
+                    <table>
 
-                        </tr>
+                        <thead>
+
+                            <tr>
+
+                                <th>Placa</th>
+
+                                <th>Motivo</th>
+
+                                <th>Entrada</th>
+
+                                <th>Previsão</th>
+
+                                <th>Ação</th>
+
+                            </tr>
+
+                        </thead>
 
 
-                    </tbody>
+                        <tbody id="maintenanceTable">
 
+                            <tr>
 
-                </table>
+                                <td
+                                    colspan="5"
+                                    class="loading"
+                                >
+                                    Carregando manutenções...
+                                </td>
 
+                            </tr>
 
-            </div>
+                        </tbody>
 
+                    </table>
+
+                </div>
+
+            </section>
 
         </section>
-
 
     </main>
 
 
 
-    <!-- =========================
-         MODAL NOVO VEÍCULO
-    ========================== -->
+    <!-- MODAL NOVO VEÍCULO -->
 
     <div
         class="modal-overlay"
         id="vehicleModal"
     >
 
-
         <div class="modal">
 
-
-            <!-- CABEÇALHO DO MODAL -->
-
             <div class="modal-header">
-
 
                 <div>
 
@@ -474,11 +525,9 @@
                         NOVO CADASTRO
                     </p>
 
-
                     <h3>
                         Adicionar veículo
                     </h3>
-
 
                     <p>
                         Cadastre um novo veículo na frota.
@@ -487,27 +536,18 @@
                 </div>
 
 
-
                 <button
                     class="modal-close"
                     id="closeVehicleModal"
                     type="button"
-                    aria-label="Fechar modal"
                 >
                     ×
                 </button>
 
-
             </div>
 
 
-
-            <!-- FORMULÁRIO -->
-
             <form id="vehicleForm">
-
-
-                <!-- PLACA -->
 
                 <div class="form-group">
 
@@ -515,10 +555,8 @@
                         Placa
                     </label>
 
-
                     <input
                         id="vehiclePlate"
-                        name="placa"
                         type="text"
                         placeholder="Ex: ABC1D23"
                         maxlength="10"
@@ -529,64 +567,46 @@
                 </div>
 
 
-
-                <!-- TIPO -->
-
                 <div class="form-group">
 
                     <label for="vehicleType">
                         Tipo do veículo
                     </label>
 
-
-                    <select
-                        id="vehicleType"
-                        name="tipo"
-                    >
-
+                    <select id="vehicleType">
 
                         <option value="">
                             Selecione
                         </option>
 
-
                         <option value="Fiorino">
                             Fiorino
                         </option>
-
 
                         <option value="Doblò">
                             Doblò
                         </option>
 
-
                         <option value="Van">
                             Van
                         </option>
-
 
                         <option value="HR">
                             HR
                         </option>
 
-
                         <option value="VUC">
                             VUC
                         </option>
-
 
                         <option value="Outro">
                             Outro
                         </option>
 
-
                     </select>
 
                 </div>
 
-
-
-                <!-- CATEGORIA -->
 
                 <div class="form-group">
 
@@ -594,35 +614,24 @@
                         Categoria
                     </label>
 
-
-                    <select
-                        id="vehicleCategory"
-                        name="categoria"
-                    >
-
+                    <select id="vehicleCategory">
 
                         <option value="Frota fixa">
                             Frota fixa
                         </option>
 
-
                         <option value="Reserva">
                             Reserva
                         </option>
-
 
                         <option value="Terceirizado">
                             Terceirizado
                         </option>
 
-
                     </select>
 
                 </div>
 
-
-
-                <!-- MENSAGEM -->
 
                 <div
                     class="form-message"
@@ -630,11 +639,7 @@
                 ></div>
 
 
-
-                <!-- BOTÕES -->
-
                 <div class="modal-actions">
-
 
                     <button
                         type="button"
@@ -653,31 +658,160 @@
                         Cadastrar veículo
                     </button>
 
-
                 </div>
-
 
             </form>
 
-
         </div>
-
 
     </div>
 
 
 
-    <!-- =========================
-         JAVASCRIPT
+    <!-- MODAL NOVA MANUTENÇÃO -->
 
-         Importante:
-         fica no final do body para todos
-         os elementos HTML já existirem
-         quando o app.js for executado.
-    ========================== -->
+    <div
+        class="modal-overlay"
+        id="maintenanceModal"
+    >
+
+        <div class="modal">
+
+            <div class="modal-header">
+
+                <div>
+
+                    <p class="eyebrow">
+                        NOVA OCORRÊNCIA
+                    </p>
+
+                    <h3>
+                        Registrar manutenção
+                    </h3>
+
+                    <p>
+                        Informe o veículo e o motivo da indisponibilidade.
+                    </p>
+
+                </div>
+
+
+                <button
+                    class="modal-close"
+                    id="closeMaintenanceModal"
+                    type="button"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <form id="maintenanceForm">
+
+                <div class="form-group">
+
+                    <label for="maintenanceVehicle">
+                        Veículo
+                    </label>
+
+                    <select
+                        id="maintenanceVehicle"
+                        required
+                    >
+                        <option value="">
+                            Selecione uma placa
+                        </option>
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="maintenanceReason">
+                        Motivo
+                    </label>
+
+                    <textarea
+                        id="maintenanceReason"
+                        rows="4"
+                        placeholder="Ex: Freio de mão não segura"
+                        required
+                    ></textarea>
+
+                </div>
+
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label for="maintenanceEntryDate">
+                            Data de entrada
+                        </label>
+
+                        <input
+                            id="maintenanceEntryDate"
+                            type="date"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="maintenanceReturnDate">
+                            Previsão de retorno
+                        </label>
+
+                        <input
+                            id="maintenanceReturnDate"
+                            type="date"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="form-message"
+                    id="maintenanceFormMessage"
+                ></div>
+
+
+                <div class="modal-actions">
+
+                    <button
+                        type="button"
+                        class="secondary-button"
+                        id="cancelMaintenanceModal"
+                    >
+                        Cancelar
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="primary-button"
+                        id="saveMaintenanceButton"
+                    >
+                        Registrar manutenção
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
 
     <script src="/static/js/app.js"></script>
-
 
 </body>
 

@@ -13,10 +13,21 @@ const veiculosManutencao =
 const searchInput =
     document.getElementById("searchInput");
 
+// MENU / TELAS
 
-// =========================
-// MODAL DE VEÍCULO
-// =========================
+const menuDashboard =
+    document.getElementById("menuDashboard");
+
+const menuMaintenance =
+    document.getElementById("menuMaintenance");
+
+const dashboardView =
+    document.getElementById("dashboardView");
+
+const maintenanceView =
+    document.getElementById("maintenanceView");
+
+// VEÍCULO
 
 const openVehicleModal =
     document.getElementById("openVehicleModal");
@@ -39,19 +50,103 @@ const vehicleFormMessage =
 const saveVehicleButton =
     document.getElementById("saveVehicleButton");
 
+// MANUTENÇÃO
 
-// =========================
+const maintenanceTable =
+    document.getElementById("maintenanceTable");
+
+const maintenanceTotal =
+    document.getElementById("maintenanceTotal");
+
+const openMaintenanceModal =
+    document.getElementById("openMaintenanceModal");
+
+const closeMaintenanceModal =
+    document.getElementById("closeMaintenanceModal");
+
+const cancelMaintenanceModal =
+    document.getElementById("cancelMaintenanceModal");
+
+const maintenanceModal =
+    document.getElementById("maintenanceModal");
+
+const maintenanceForm =
+    document.getElementById("maintenanceForm");
+
+const maintenanceVehicle =
+    document.getElementById("maintenanceVehicle");
+
+const maintenanceReason =
+    document.getElementById("maintenanceReason");
+
+const maintenanceEntryDate =
+    document.getElementById("maintenanceEntryDate");
+
+const maintenanceReturnDate =
+    document.getElementById("maintenanceReturnDate");
+
+const maintenanceFormMessage =
+    document.getElementById("maintenanceFormMessage");
+
+const saveMaintenanceButton =
+    document.getElementById("saveMaintenanceButton");
+
 // DADOS
-// =========================
 
 let veiculos = [];
 
 let manutencoesAtivas = [];
 
+// UTILITÁRIOS
 
-// =========================
-// CARREGAMENTO INICIAL
-// =========================
+function hojeISO() {
+
+    const agora =
+        new Date();
+
+
+    const ano =
+        agora.getFullYear();
+
+
+    const mes =
+        String(
+            agora.getMonth() + 1
+        ).padStart(2, "0");
+
+
+    const dia =
+        String(
+            agora.getDate()
+        ).padStart(2, "0");
+
+
+    return `${ano}-${mes}-${dia}`;
+
+}
+
+
+function formatarData(data) {
+
+    if (!data) {
+
+        return "—";
+
+    }
+
+
+    const [
+        ano,
+        mes,
+        dia
+    ] = data.split("-");
+
+
+    return `${dia}/${mes}/${ano}`;
+
+}
+
+// CARREGAR DADOS
 
 async function carregarDados() {
 
@@ -96,6 +191,10 @@ async function carregarDados() {
             veiculos
         );
 
+        renderizarManutencoes();
+
+        atualizarSelectManutencao();
+
 
     } catch (error) {
 
@@ -122,29 +221,22 @@ async function carregarDados() {
 }
 
 
-// Mantemos esse nome porque o cadastro
-// de veículo já chama essa função.
-
 async function carregarVeiculos() {
 
     await carregarDados();
 
 }
 
-
-// =========================
 // INDICADORES
-// =========================
 
 function atualizarIndicadores() {
 
-    const total =
-        veiculos.length;
-
-
     const ativos =
         veiculos.filter(
-            veiculo => veiculo.ativo
+
+            veiculo =>
+                veiculo.ativo
+
         );
 
 
@@ -159,28 +251,32 @@ function atualizarIndicadores() {
 
 
     totalVeiculos.textContent =
-        total;
+        veiculos.length;
 
 
     veiculosAtivos.textContent =
-        disponiveis;
+        Math.max(
+            disponiveis,
+            0
+        );
 
 
     veiculosManutencao.textContent =
         quantidadeManutencao;
 
+
+    maintenanceTotal.textContent =
+        quantidadeManutencao;
+
 }
 
+// MANUTENÇÃO DO VEÍCULO
 
-// =========================
-// VERIFICAR MANUTENÇÃO
-// =========================
-
-function veiculoEstaEmManutencao(
+function buscarManutencaoAtiva(
     veiculoId
 ) {
 
-    return manutencoesAtivas.some(
+    return manutencoesAtivas.find(
 
         manutencao =>
 
@@ -191,10 +287,7 @@ function veiculoEstaEmManutencao(
 
 }
 
-
-// =========================
-// RENDERIZAR TABELA
-// =========================
+// TABELA DA FROTA
 
 function renderizarVeiculos(lista) {
 
@@ -231,8 +324,8 @@ function renderizarVeiculos(lista) {
                 document.createElement("tr");
 
 
-            const emManutencao =
-                veiculoEstaEmManutencao(
+            const manutencao =
+                buscarManutencaoAtiva(
                     veiculo.id
                 );
 
@@ -240,7 +333,7 @@ function renderizarVeiculos(lista) {
             let statusHTML;
 
 
-            if (emManutencao) {
+            if (manutencao) {
 
                 statusHTML = `
 
@@ -325,10 +418,254 @@ function renderizarVeiculos(lista) {
 
 }
 
+// TABELA DE MANUTENÇÕES
 
-// =========================
+function renderizarManutencoes() {
+
+    maintenanceTable.innerHTML =
+        "";
+
+
+    if (
+        manutencoesAtivas.length
+        ===
+        0
+    ) {
+
+        maintenanceTable.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="5"
+                    class="loading"
+                >
+                    Nenhum veículo em manutenção.
+                </td>
+
+            </tr>
+
+        `;
+
+        return;
+
+    }
+
+
+    manutencoesAtivas.forEach(
+
+        manutencao => {
+
+            const veiculo =
+                veiculos.find(
+
+                    item =>
+
+                        item.id
+                        ===
+                        manutencao.veiculo_id
+
+                );
+
+
+            const row =
+                document.createElement("tr");
+
+
+            row.innerHTML = `
+
+                <td class="plate">
+
+                    ${
+                        veiculo
+                        ?
+                        veiculo.placa
+                        :
+                        "Veículo não encontrado"
+                    }
+
+                </td>
+
+
+                <td>
+
+                    ${manutencao.motivo}
+
+                </td>
+
+
+                <td>
+
+                    ${
+                        formatarData(
+                            manutencao.data_entrada
+                        )
+                    }
+
+                </td>
+
+
+                <td>
+
+                    ${
+                        formatarData(
+                            manutencao.previsao_retorno
+                        )
+                    }
+
+                </td>
+
+
+                <td>
+
+                    <button
+                        class="action-button finish-maintenance"
+                        data-maintenance-id="${manutencao.id}"
+                        type="button"
+                    >
+                        Registrar retorno
+                    </button>
+
+                </td>
+
+            `;
+
+
+            maintenanceTable.appendChild(
+                row
+            );
+
+        }
+
+    );
+
+}
+
+// SELECT DE VEÍCULOS
+
+function atualizarSelectManutencao() {
+
+    maintenanceVehicle.innerHTML = `
+
+        <option value="">
+            Selecione uma placa
+        </option>
+
+    `;
+
+
+    const veiculosDisponiveis =
+        veiculos.filter(
+
+            veiculo => {
+
+                const manutencao =
+                    buscarManutencaoAtiva(
+                        veiculo.id
+                    );
+
+
+                return (
+                    veiculo.ativo
+                    &&
+                    !manutencao
+                );
+
+            }
+
+        );
+
+
+    veiculosDisponiveis.forEach(
+
+        veiculo => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            option.value =
+                veiculo.id;
+
+
+            option.textContent =
+                veiculo.placa;
+
+
+            maintenanceVehicle.appendChild(
+                option
+            );
+
+        }
+
+    );
+
+}
+
+// NAVEGAÇÃO
+
+function mostrarDashboard() {
+
+    dashboardView
+        .classList
+        .add("active");
+
+
+    maintenanceView
+        .classList
+        .remove("active");
+
+
+    menuDashboard
+        .classList
+        .add("active");
+
+
+    menuMaintenance
+        .classList
+        .remove("active");
+
+}
+
+
+function mostrarManutencoes() {
+
+    dashboardView
+        .classList
+        .remove("active");
+
+
+    maintenanceView
+        .classList
+        .add("active");
+
+
+    menuDashboard
+        .classList
+        .remove("active");
+
+
+    menuMaintenance
+        .classList
+        .add("active");
+
+}
+
+
+menuDashboard.addEventListener(
+    "click",
+    mostrarDashboard
+);
+
+
+menuMaintenance.addEventListener(
+    "click",
+    mostrarManutencoes
+);
+
 // BUSCA
-// =========================
 
 searchInput.addEventListener(
 
@@ -362,10 +699,7 @@ searchInput.addEventListener(
 
 );
 
-
-// =========================
 // MODAL DE VEÍCULO
-// =========================
 
 function abrirModalVeiculo() {
 
@@ -376,21 +710,6 @@ function abrirModalVeiculo() {
 
     vehicleFormMessage.textContent =
         "";
-
-
-    vehicleFormMessage.className =
-        "form-message";
-
-
-    setTimeout(() => {
-
-        document
-            .getElementById(
-                "vehiclePlate"
-            )
-            .focus();
-
-    }, 100);
 
 }
 
@@ -407,10 +726,6 @@ function fecharModalVeiculo() {
 
     vehicleFormMessage.textContent =
         "";
-
-
-    vehicleFormMessage.className =
-        "form-message";
 
 }
 
@@ -432,54 +747,7 @@ cancelVehicleModal.addEventListener(
     fecharModalVeiculo
 );
 
-
-vehicleModal.addEventListener(
-
-    "click",
-
-    event => {
-
-        if (
-            event.target
-            ===
-            vehicleModal
-        ) {
-
-            fecharModalVeiculo();
-
-        }
-
-    }
-
-);
-
-
-document.addEventListener(
-
-    "keydown",
-
-    event => {
-
-        if (
-            event.key === "Escape"
-            &&
-            vehicleModal
-                .classList
-                .contains("active")
-        ) {
-
-            fecharModalVeiculo();
-
-        }
-
-    }
-
-);
-
-
-// =========================
 // CADASTRAR VEÍCULO
-// =========================
 
 vehicleForm.addEventListener(
 
@@ -516,21 +784,6 @@ vehicleForm.addEventListener(
                 .value;
 
 
-        if (!placa) {
-
-            vehicleFormMessage.textContent =
-                "Informe a placa do veículo.";
-
-
-            vehicleFormMessage.className =
-                "form-message error";
-
-
-            return;
-
-        }
-
-
         saveVehicleButton.disabled =
             true;
 
@@ -551,14 +804,12 @@ vehicleForm.addEventListener(
                         method:
                             "POST",
 
-
                         headers: {
 
                             "Content-Type":
                                 "application/json"
 
                         },
-
 
                         body:
                             JSON.stringify({
@@ -592,29 +843,17 @@ vehicleForm.addEventListener(
 
                     data.detail
                     ||
-                    "Não foi possível cadastrar o veículo."
+                    "Não foi possível cadastrar."
 
                 );
 
             }
 
 
-            vehicleFormMessage.textContent =
-                `${data.placa} cadastrado com sucesso.`;
-
-
-            vehicleFormMessage.className =
-                "form-message success";
-
-
             await carregarDados();
 
 
-            setTimeout(() => {
-
-                fecharModalVeiculo();
-
-            }, 700);
+            fecharModalVeiculo();
 
 
         } catch (error) {
@@ -642,9 +881,360 @@ vehicleForm.addEventListener(
 
 );
 
+// MODAL MANUTENÇÃO
 
-// =========================
+function abrirModalManutencao() {
+
+    maintenanceEntryDate.value =
+        hojeISO();
+
+
+    maintenanceModal
+        .classList
+        .add("active");
+
+
+    maintenanceFormMessage.textContent =
+        "";
+
+}
+
+
+function fecharModalManutencao() {
+
+    maintenanceModal
+        .classList
+        .remove("active");
+
+
+    maintenanceForm.reset();
+
+
+    maintenanceFormMessage.textContent =
+        "";
+
+}
+
+
+openMaintenanceModal.addEventListener(
+    "click",
+    abrirModalManutencao
+);
+
+
+closeMaintenanceModal.addEventListener(
+    "click",
+    fecharModalManutencao
+);
+
+
+cancelMaintenanceModal.addEventListener(
+    "click",
+    fecharModalManutencao
+);
+
+// CADASTRAR MANUTENÇÃO
+
+maintenanceForm.addEventListener(
+
+    "submit",
+
+    async event => {
+
+        event.preventDefault();
+
+
+        saveMaintenanceButton.disabled =
+            true;
+
+
+        saveMaintenanceButton.textContent =
+            "Registrando...";
+
+
+        try {
+
+            const response =
+                await fetch(
+
+                    "/manutencoes",
+
+                    {
+
+                        method:
+                            "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json"
+
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                veiculo_id:
+                                    Number(
+                                        maintenanceVehicle.value
+                                    ),
+
+                                motivo:
+                                    maintenanceReason.value
+                                        .trim(),
+
+                                data_entrada:
+                                    maintenanceEntryDate.value,
+
+                                previsao_retorno:
+                                    maintenanceReturnDate.value
+                                    ||
+                                    null
+
+                            })
+
+                    }
+
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+
+                    data.detail
+                    ||
+                    "Não foi possível registrar a manutenção."
+
+                );
+
+            }
+
+
+            await carregarDados();
+
+
+            fecharModalManutencao();
+
+
+        } catch (error) {
+
+            maintenanceFormMessage.textContent =
+                error.message;
+
+
+            maintenanceFormMessage.className =
+                "form-message error";
+
+
+        } finally {
+
+            saveMaintenanceButton.disabled =
+                false;
+
+
+            saveMaintenanceButton.textContent =
+                "Registrar manutenção";
+
+        }
+
+    }
+
+);
+
+// FINALIZAR MANUTENÇÃO
+
+maintenanceTable.addEventListener(
+
+    "click",
+
+    async event => {
+
+        const button =
+            event.target.closest(
+                ".finish-maintenance"
+            );
+
+
+        if (!button) {
+
+            return;
+
+        }
+
+
+        const maintenanceId =
+            button.dataset
+                .maintenanceId;
+
+
+        const confirmar =
+            window.confirm(
+                "Confirmar o retorno deste veículo à operação?"
+            );
+
+
+        if (!confirmar) {
+
+            return;
+
+        }
+
+
+        button.disabled =
+            true;
+
+
+        button.textContent =
+            "Finalizando...";
+
+
+        try {
+
+            const response =
+                await fetch(
+
+                    `/manutencoes/${maintenanceId}/finalizar`,
+
+                    {
+
+                        method:
+                            "PATCH",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json"
+
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                data_retorno:
+                                    hojeISO()
+
+                            })
+
+                    }
+
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+
+                    data.detail
+                    ||
+                    "Erro ao finalizar manutenção."
+
+                );
+
+            }
+
+
+            await carregarDados();
+
+
+        } catch (error) {
+
+            alert(
+                error.message
+            );
+
+
+            button.disabled =
+                false;
+
+
+            button.textContent =
+                "Registrar retorno";
+
+        }
+
+    }
+
+);
+
+// FECHAR MODAIS CLICANDO FORA
+
+vehicleModal.addEventListener(
+
+    "click",
+
+    event => {
+
+        if (
+            event.target
+            ===
+            vehicleModal
+        ) {
+
+            fecharModalVeiculo();
+
+        }
+
+    }
+
+);
+
+
+maintenanceModal.addEventListener(
+
+    "click",
+
+    event => {
+
+        if (
+            event.target
+            ===
+            maintenanceModal
+        ) {
+
+            fecharModalManutencao();
+
+        }
+
+    }
+
+);
+
+// ESC
+
+document.addEventListener(
+
+    "keydown",
+
+    event => {
+
+        if (
+            event.key
+            !==
+            "Escape"
+        ) {
+
+            return;
+
+        }
+
+
+        fecharModalVeiculo();
+
+        fecharModalManutencao();
+
+    }
+
+);
+
 // INICIALIZAÇÃO
-// =========================
 
 carregarDados();
