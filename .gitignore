@@ -28,3 +28,45 @@ automation/.auth/
 # Sistema operacional
 .DS_Store
 Thumbs.db
+
+automation/.browser-profile/
+automation/capturas/
+
+# Ambiente virtual
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Banco de dados local
+*.db
+*.sqlite
+*.sqlite3
+
+# Variáveis de ambiente
+.env
+.env.*
+
+# Autenticação e sessões
+auth.json
+cookies.json
+playwright/.auth/
+automation/.auth/
+automation/.browser-profile/
+
+# Arquivos gerados pelo coletor
+automation/capturas/
+automation/coletor_status.json
+automation/coletor_execucao.log
+automation/coleta_bruta_real.json
+automation/coleta_normalizada.json
+
+# VS Code
+.vscode/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

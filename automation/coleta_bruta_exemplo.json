@@ -1,0 +1,14 @@
+{
+    "data": "2026-07-22",
+    "turno": "manha",
+    "origem": "HAWK_COLLECTOR",
+    "registros": [
+        {
+            "placa": " rul7f50 ",
+            "motorista": null,
+            "rota": "TESTE-002",
+            "status": "sem carga",
+            "observacao": "Teste passando pelo normalizador"
+        }
+    ]
+}

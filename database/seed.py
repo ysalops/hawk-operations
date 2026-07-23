@@ -1,7 +1,19 @@
 from sqlalchemy import select
 
-from backend.database import SessionLocal
+from backend.database import (
+    Base,
+    SessionLocal,
+    engine,
+)
+
 from backend.models import Veiculo
+
+
+# Garante que todas as tabelas existam
+# antes de executar o seed.
+Base.metadata.create_all(
+    bind=engine
+)
 
 
 PLACAS = [
@@ -63,7 +75,8 @@ PLACAS = [
     "TYT9J10",
     "UBG6D17",
 
-    # Veículos encontrados na lista de manutenção
+    # Veículos encontrados
+    # na lista de manutenção
     "TAS9F61",
     "TBF2F86",
     "TBF2D21",
@@ -83,45 +96,116 @@ PLACAS = [
 
 
 def criar_frota():
+
     db = SessionLocal()
 
     try:
+
         adicionados = 0
         existentes = 0
 
-        for placa in PLACAS:
-            placa = placa.strip().upper()
+        for placa_original in PLACAS:
+
+            placa = (
+                placa_original
+                .strip()
+                .upper()
+            )
 
             veiculo_existente = db.scalar(
-                select(Veiculo).where(Veiculo.placa == placa)
+
+                select(
+                    Veiculo
+                )
+                .where(
+
+                    Veiculo.placa
+                    ==
+                    placa
+
+                )
+
             )
 
             if veiculo_existente:
+
                 existentes += 1
+
                 continue
 
+
             veiculo = Veiculo(
-                placa=placa,
-                tipo=None,
-                categoria="Frota fixa",
-                ativo=True,
+
+                placa=
+                    placa,
+
+                tipo=
+                    None,
+
+                categoria=
+                    "Frota fixa",
+
+                observacao=
+                    None,
+
+                ativo=
+                    True,
+
             )
 
-            db.add(veiculo)
+
+            db.add(
+                veiculo
+            )
+
+
             adicionados += 1
+
 
         db.commit()
 
-        print(f"Veículos adicionados: {adicionados}")
-        print(f"Veículos já existentes: {existentes}")
+
+        print("")
+        print(
+            "Seed concluído com sucesso."
+        )
+
+        print(
+            f"Veículos adicionados: "
+            f"{adicionados}"
+        )
+
+        print(
+            f"Veículos já existentes: "
+            f"{existentes}"
+        )
+
+        print(
+            f"Total processado: "
+            f"{len(PLACAS)}"
+        )
+
 
     except Exception as erro:
+
         db.rollback()
-        print(f"Erro ao cadastrar frota: {erro}")
+
+
+        print("")
+        print(
+            "Erro ao cadastrar frota:"
+        )
+
+        print(
+            erro
+        )
+
 
     finally:
+
         db.close()
 
 
 if __name__ == "__main__":
+
     criar_frota()

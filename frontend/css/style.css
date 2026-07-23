@@ -9,14 +9,14 @@
     --surface: #ffffff;
     --surface-soft: #f8fafc;
 
-    --sidebar: #101722;
-    --sidebar-light: #192331;
+    --sidebar: #0b2f59;
+    --sidebar-light: #123f72;
 
     --text: #18212f;
     --text-soft: #6e7888;
 
-    --primary: #2f6fed;
-    --primary-soft: #edf3ff;
+    --primary: #1c5796;
+    --primary-soft: #edf4fb;
 
     --border: #e5e9f0;
 
@@ -56,38 +56,52 @@ body {
     padding: 28px 18px;
 }
 
-
 .brand {
     display: flex;
     align-items: center;
-    gap: 13px;
-
-    padding: 0 10px;
-    margin-bottom: 42px;
+    gap: 12px;
 }
 
-
 .brand-icon {
-    width: 42px;
-    height: 42px;
+    width: 52px;
+    height: 52px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 12px;
+    flex-shrink: 0;
 
-    background:
-        linear-gradient(
-            135deg,
-            #4d83ff,
-            #2656c8
-        );
+    border-radius: 14px;
 
-    color: white;
+    background: linear-gradient(
+        135deg,
+        rgba(58, 108, 255, 0.18),
+        rgba(58, 108, 255, 0.08)
+    );
+}
 
+.brand-logo-svg {
+    width: 40px;
+    height: auto;
+    display: block;
+
+    color: #ffffff;
+}
+
+.brand-text strong {
+    display: block;
+    font-size: 15px;
     font-weight: 700;
-    font-size: 20px;
+    color: #ffffff;
+    line-height: 1.1;
+}
+
+.brand-text span {
+    display: block;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.65);
+    margin-top: 2px;
 }
 
 
@@ -973,4 +987,1926 @@ tbody tr:hover {
 .delete-operation:hover {
     background: #fff1f0;
     border-color: #f3c5c0;
+}
+
+/* PANORAMA */
+
+.panorama-summary {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 18px;
+
+    margin-bottom: 24px;
+}
+
+
+.panorama-stat {
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 14px;
+
+    padding: 20px 22px;
+}
+
+
+.panorama-stat span {
+    display: block;
+
+    color: var(--text-soft);
+
+    font-size: 12px;
+
+    margin-bottom: 10px;
+}
+
+
+.panorama-stat strong {
+    font-size: 27px;
+}
+
+
+.panorama-panel {
+    margin-bottom: 18px;
+}
+
+
+.panorama-content {
+    padding: 24px;
+}
+
+
+.panorama-content pre {
+    width: 100%;
+
+    min-height: 420px;
+
+    margin: 0;
+
+    padding: 22px;
+
+    background: #f8fafc;
+
+    border: 1px solid var(--border);
+
+    border-radius: 10px;
+
+    color: var(--text);
+
+    font-family:
+        "Segoe UI",
+        sans-serif;
+
+    font-size: 13px;
+
+    line-height: 1.7;
+
+    white-space: pre-wrap;
+
+    word-break: break-word;
+}
+
+
+#copyPanoramaButton:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+}
+
+
+@media (max-width: 760px) {
+
+    .panorama-summary {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+/* FROTA */
+
+.fleet-summary {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 18px;
+
+    margin-bottom: 24px;
+}
+
+
+.fleet-stat {
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 14px;
+
+    padding: 20px 22px;
+}
+
+
+.fleet-stat span {
+    display: block;
+
+    color: var(--text-soft);
+
+    font-size: 12px;
+
+    margin-bottom: 10px;
+}
+
+
+.fleet-stat strong {
+    display: block;
+
+    font-size: 27px;
+
+    margin-bottom: 6px;
+}
+
+
+.fleet-stat small {
+    color: var(--text-soft);
+
+    font-size: 11px;
+}
+
+
+.fleet-panel-header {
+    gap: 20px;
+}
+
+
+.fleet-filters {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    flex-wrap: wrap;
+}
+
+
+.fleet-filter-select {
+    min-width: 155px;
+
+    padding: 10px 12px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 8px;
+
+    background: var(--surface-soft);
+
+    color: var(--text);
+
+    outline: none;
+
+    font-size: 12px;
+}
+
+
+.fleet-filter-select:focus {
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 3px rgba(47, 111, 237, 0.1);
+}
+
+
+.fleet-maintenance-button {
+    color: #a16207;
+}
+
+
+.fleet-no-action {
+    color: var(--text-soft);
+}
+
+
+@media (max-width: 1100px) {
+
+    .fleet-summary {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+}
+
+
+@media (max-width: 760px) {
+
+    .fleet-summary {
+        grid-template-columns: 1fr;
+    }
+
+
+    .fleet-panel-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+
+    .fleet-filters {
+        width: 100%;
+    }
+
+
+    .fleet-filters .search-box,
+    .fleet-filter-select {
+        width: 100%;
+    }
+
+}
+/*  REFINOS DA IDENTIDADE HAWK */
+
+:root {
+    --primary-dark: #0b2f59;
+    --primary-hover: #164a82;
+    --danger: #b42318;
+    --danger-soft: #fff1f0;
+    --warning: #a16207;
+    --warning-soft: #fef3c7;
+}
+
+.primary-button {
+    transition:
+        background 0.2s,
+        transform 0.2s,
+        box-shadow 0.2s;
+}
+
+.primary-button:hover {
+    background: var(--primary-hover);
+    box-shadow:
+        0 6px 18px rgba(28, 87, 150, 0.18);
+    transform: translateY(-1px);
+}
+
+.primary-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.brand-icon {
+    background:
+        linear-gradient(
+            135deg,
+            #1c5796,
+            #0b2f59
+        );
+}
+
+.menu-item.active {
+    background: rgba(255, 255, 255, 0.10);
+}
+
+.card,
+.fleet-stat,
+.panorama-stat,
+.maintenance-summary,
+.panel,
+.operation-filters {
+    box-shadow:
+        0 8px 24px rgba(11, 47, 89, 0.035);
+}
+
+
+/*  FORMULÁRIOS */
+
+.form-help {
+    display: block;
+    margin-top: -2px;
+    color: var(--text-soft);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+
+/*  AÇÕES DA FROTA */
+
+.fleet-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+    min-width: 360px;
+}
+
+.fleet-actions .action-button {
+    white-space: nowrap;
+}
+
+.edit-vehicle {
+    color: var(--primary);
+    border-color: #cbdcf0;
+}
+
+.edit-vehicle:hover {
+    background: var(--primary-soft);
+    border-color: #a9c6e5;
+}
+
+.history-vehicle {
+    color: #475569;
+}
+
+.history-vehicle:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.fleet-maintenance-button {
+    color: var(--warning);
+    border-color: #f0d899;
+}
+
+.fleet-maintenance-button:hover {
+    background: var(--warning-soft);
+    border-color: #e4c36e;
+}
+
+.go-maintenance {
+    color: var(--warning);
+    border-color: #f0d899;
+}
+
+.go-maintenance:hover {
+    background: var(--warning-soft);
+    border-color: #e4c36e;
+}
+
+.toggle-vehicle {
+    color: #765314;
+}
+
+.toggle-vehicle:hover {
+    background: #fff8e6;
+    border-color: #f2d28b;
+}
+
+.delete-vehicle {
+    color: var(--danger);
+    border-color: #f0c5c1;
+}
+
+.delete-vehicle:hover {
+    background: var(--danger-soft);
+    border-color: #e6aaa4;
+}
+
+.fleetTable td:last-child,
+#fleetTable td:last-child {
+    min-width: 390px;
+}
+
+
+/*  MODAL GRANDE */
+
+.modal-large {
+    max-width: 880px;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+}
+
+
+/*  HISTÓRICO DO VEÍCULO */
+
+.vehicle-history-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.vehicle-history-summary article {
+    padding: 17px 18px;
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.vehicle-history-summary span {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-soft);
+    font-size: 11px;
+}
+
+.vehicle-history-summary strong {
+    display: block;
+    font-size: 19px;
+    color: var(--text);
+}
+
+.vehicle-history-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 430px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.vehicle-history-content::-webkit-scrollbar {
+    width: 7px;
+}
+
+.vehicle-history-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.vehicle-history-item {
+    position: relative;
+    padding: 18px 19px 18px 23px;
+    background: #fbfcfe;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.vehicle-history-item::before {
+    content: "";
+    position: absolute;
+    top: 17px;
+    bottom: 17px;
+    left: 0;
+    width: 3px;
+    border-radius: 0 4px 4px 0;
+    background: var(--primary);
+}
+
+.vehicle-history-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 12px;
+}
+
+.vehicle-history-item-header strong {
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.vehicle-history-item-header span {
+    color: var(--text-soft);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.vehicle-history-item p {
+    margin-top: 7px;
+    color: var(--text-soft);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.vehicle-history-item p strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+
+/*  REFINOS DAS TABELAS */
+
+#fleetTable tr,
+#driversTable tr,
+#maintenanceTable tr,
+#operationsTable tr {
+    transition: background 0.15s;
+}
+
+#fleetTable td,
+#driversTable td,
+#maintenanceTable td,
+#operationsTable td {
+    vertical-align: middle;
+}
+
+
+/*  RESPONSIVO - NOVAS ÁREAS */
+
+@media (max-width: 1200px) {
+
+    .fleet-actions {
+        min-width: 280px;
+    }
+
+    #fleetTable td:last-child {
+        min-width: 310px;
+    }
+
+}
+
+@media (max-width: 760px) {
+
+    .vehicle-history-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .vehicle-history-item-header {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .modal-large {
+        max-height: calc(100vh - 30px);
+    }
+
+}
+
+/*  MOTORISTAS */
+
+.driver-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+
+    min-width: 300px;
+}
+
+
+.driver-actions .action-button {
+    white-space: nowrap;
+}
+
+
+/* EDITAR MOTORISTA */
+
+.edit-driver {
+    color: var(--primary);
+
+    border-color: #cbdcf0;
+}
+
+
+.edit-driver:hover {
+    background: var(--primary-soft);
+
+    border-color: #a9c6e5;
+}
+
+
+/* HISTÓRICO MOTORISTA */
+
+.history-driver {
+    color: #475569;
+}
+
+
+.history-driver:hover {
+    background: #f1f5f9;
+
+    border-color: #cbd5e1;
+}
+
+
+/* ATIVAR / INATIVAR */
+
+.toggle-driver {
+    color: #765314;
+}
+
+
+.toggle-driver:hover {
+    background: #fff8e6;
+
+    border-color: #f2d28b;
+}
+
+
+/* EXCLUIR MOTORISTA */
+
+.delete-driver {
+    color: var(--danger);
+
+    border-color: #f0c5c1;
+}
+
+
+.delete-driver:hover {
+    background: var(--danger-soft);
+
+    border-color: #e6aaa4;
+}
+
+
+/* COLUNA DE AÇÕES */
+
+#driversTable td:last-child {
+    min-width: 330px;
+}
+
+
+/*  RESUMO DO HISTÓRICO DO MOTORISTA */
+
+.driver-history-summary {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 14px;
+
+    margin-bottom: 22px;
+}
+
+
+.driver-history-summary article {
+    padding: 17px 18px;
+
+    background: var(--surface-soft);
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+}
+
+
+.driver-history-summary span {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: var(--text-soft);
+
+    font-size: 11px;
+}
+
+
+.driver-history-summary strong {
+    display: block;
+
+    color: var(--text);
+
+    font-size: 19px;
+}
+
+
+/*  LISTA DO HISTÓRICO DO MOTORISTA */
+
+.driver-history-content {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+
+    max-height: 430px;
+
+    overflow-y: auto;
+
+    padding-right: 5px;
+}
+
+
+.driver-history-content::-webkit-scrollbar {
+    width: 7px;
+}
+
+
+.driver-history-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+
+    border-radius: 10px;
+}
+
+
+/*  OBSERVAÇÃO NA TABELA */
+
+#driversTable td:nth-child(3) {
+    max-width: 260px;
+
+    color: var(--text-soft);
+
+    line-height: 1.5;
+}
+
+
+/*  RESPONSIVO - MOTORISTAS */
+
+@media (max-width: 1200px) {
+
+    .driver-history-summary {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+
+    .driver-actions {
+        min-width: 250px;
+    }
+
+
+    #driversTable td:last-child {
+        min-width: 280px;
+    }
+
+}
+
+
+@media (max-width: 760px) {
+
+    .driver-history-summary {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .driver-actions {
+        min-width: 230px;
+    }
+
+}
+
+/*  CORREÇÃO GERAL DE RESPONSIVIDADE */
+
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+
+/* GARANTE QUE A SIDEBAR FIQUE SEPARADA DO CONTEÚDO */
+
+.sidebar {
+    width: 250px;
+
+    z-index: 100;
+
+    flex-shrink: 0;
+}
+
+
+/* CONTEÚDO PRINCIPAL */
+
+.main-content {
+    margin-left: 250px;
+
+    width: calc(100% - 250px);
+    max-width: calc(100vw - 250px);
+
+    min-width: 0;
+
+    padding: 38px 44px;
+
+    overflow-x: hidden;
+}
+
+
+/* TODAS AS TELAS DEVEM RESPEITAR O ESPAÇO DISPONÍVEL */
+
+.app-view {
+    width: 100%;
+
+    min-width: 0;
+}
+
+
+.app-view.active {
+    display: block;
+}
+
+
+/* CABEÇALHO */
+
+.topbar {
+    width: 100%;
+
+    min-width: 0;
+
+    flex-wrap: wrap;
+
+    gap: 20px;
+}
+
+
+.topbar > div {
+    min-width: 0;
+}
+
+
+/* CARDS */
+
+.cards,
+.fleet-summary,
+.panorama-summary {
+    width: 100%;
+
+    min-width: 0;
+}
+
+
+.cards {
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+}
+
+
+.fleet-summary {
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+}
+
+
+/* PAINÉIS */
+
+.panel {
+    width: 100%;
+
+    min-width: 0;
+
+    max-width: 100%;
+}
+
+
+/* A TABELA ROLA DENTRO DO CARD,
+   NÃO EMPURRA A PÁGINA INTEIRA */
+
+.table-wrapper {
+    width: 100%;
+
+    max-width: 100%;
+
+    overflow-x: auto;
+}
+
+
+/* FILTROS */
+
+.fleet-panel-header {
+    flex-wrap: wrap;
+}
+
+
+.fleet-filters {
+    max-width: 100%;
+}
+
+
+/*  NOTEBOOKS E TELAS MENORES */
+
+@media (max-width: 1400px) {
+
+    .main-content {
+        padding:
+            32px
+            30px;
+    }
+
+
+    .cards,
+    .fleet-summary {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+/*  TABLETS */
+
+@media (max-width: 1000px) {
+
+    .sidebar {
+        width: 220px;
+
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+
+    .main-content {
+        margin-left: 220px;
+
+        width: calc(100% - 220px);
+        max-width: calc(100vw - 220px);
+
+        padding:
+            28px
+            24px;
+    }
+
+
+    .topbar {
+        align-items: flex-start;
+    }
+
+
+    .fleet-panel-header {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+
+    .fleet-filters {
+        width: 100%;
+    }
+
+}
+
+
+/*  CELULAR */
+
+@media (max-width: 760px) {
+
+    .sidebar {
+        display: none;
+    }
+
+
+    .main-content {
+        margin-left: 0;
+
+        width: 100%;
+        max-width: 100%;
+
+        padding:
+            24px
+            18px;
+    }
+
+
+    .cards,
+    .fleet-summary,
+    .panorama-summary {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .topbar {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+
+    .topbar-actions {
+        width: 100%;
+
+        flex-wrap: wrap;
+    }
+
+
+    .primary-button {
+        width: 100%;
+    }
+
+
+    .search-box,
+    .fleet-filter-select {
+        width: 100%;
+    }
+
+
+    .operation-filters {
+        align-items: stretch;
+
+        flex-direction: column;
+    }
+
+
+    .operation-filters .form-group {
+        width: 100%;
+
+        min-width: 0;
+    }
+
+}
+
+/*  DASHBOARD - GRÁFICOS */
+
+.dashboard-charts {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 18px;
+
+    margin-bottom: 24px;
+}
+
+
+.dashboard-chart-card {
+    min-width: 0;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 14px;
+
+    padding: 22px 24px;
+
+    box-shadow:
+        0 8px 24px rgba(11, 47, 89, 0.035);
+}
+
+
+.dashboard-chart-wide {
+    grid-column:
+        span 2;
+}
+
+
+.dashboard-chart-header {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    margin-bottom: 20px;
+}
+
+
+.dashboard-chart-header h3 {
+    font-size: 15px;
+}
+
+
+.dashboard-chart-header p {
+    color: var(--text-soft);
+
+    font-size: 11px;
+
+    margin-top: 5px;
+}
+
+
+.dashboard-chart-container {
+    position: relative;
+
+    width: 100%;
+
+    height: 290px;
+}
+
+
+.dashboard-chart-container-wide {
+    height: 320px;
+}
+
+
+/*  DASHBOARD RESPONSIVO */
+
+@media (max-width: 1100px) {
+
+    .dashboard-charts {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .dashboard-chart-wide {
+        grid-column:
+            span 1;
+    }
+
+}
+
+
+@media (max-width: 760px) {
+
+    .dashboard-chart-card {
+        padding:
+            18px;
+    }
+
+
+    .dashboard-chart-container {
+        height:
+            260px;
+    }
+
+
+    .dashboard-chart-container-wide {
+        height:
+            280px;
+    }
+
+}
+
+/*  MANUTENÇÕES - NOVA ESTRUTURA */
+
+.maintenance-active-panel {
+    margin-bottom: 24px;
+}
+
+
+.maintenance-history-panel {
+    margin-top: 24px;
+}
+
+
+/* AÇÕES DAS MANUTENÇÕES */
+
+.maintenance-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+
+    min-width: 220px;
+}
+
+
+.maintenance-actions .action-button {
+    white-space: nowrap;
+}
+
+
+.finish-maintenance {
+    color: var(--warning);
+
+    border-color: #f0d899;
+}
+
+
+.finish-maintenance:hover {
+    background: var(--warning-soft);
+
+    border-color: #e4c36e;
+}
+
+
+.view-maintenance-details {
+    color: var(--primary);
+
+    border-color: #cbdcf0;
+}
+
+
+.view-maintenance-details:hover {
+    background: var(--primary-soft);
+
+    border-color: #a9c6e5;
+}
+
+
+/*  DETALHES DA MANUTENÇÃO */
+
+.maintenance-details-content {
+    display: flex;
+    flex-direction: column;
+
+    gap: 20px;
+}
+
+
+.maintenance-detail-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 12px;
+}
+
+
+.maintenance-detail-grid > div {
+    min-width: 0;
+
+    padding: 16px 18px;
+
+    background: var(--surface-soft);
+
+    border: 1px solid var(--border);
+
+    border-radius: 11px;
+}
+
+
+.maintenance-detail-grid span {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: var(--text-soft);
+
+    font-size: 11px;
+}
+
+
+.maintenance-detail-grid strong {
+    display: block;
+
+    color: var(--text);
+
+    font-size: 13px;
+
+    line-height: 1.5;
+
+    word-break: break-word;
+}
+
+
+.maintenance-detail-text {
+    padding: 18px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 11px;
+
+    background: white;
+}
+
+
+.maintenance-detail-text h4 {
+    margin-bottom: 9px;
+
+    font-size: 13px;
+}
+
+
+.maintenance-detail-text p {
+    color: var(--text-soft);
+
+    font-size: 12px;
+
+    line-height: 1.65;
+}
+
+
+/*  TABELAS DE MANUTENÇÃO */
+
+#maintenanceTable td:last-child {
+    min-width: 240px;
+}
+
+
+#maintenanceHistoryTable td:last-child {
+    min-width: 130px;
+}
+
+
+#maintenanceTable td,
+#maintenanceHistoryTable td {
+    vertical-align: middle;
+}
+
+
+/*  MANUTENÇÕES - RESPONSIVO */
+
+@media (max-width: 760px) {
+
+    .maintenance-detail-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .maintenance-actions {
+        min-width: 200px;
+    }
+
+}
+
+/*  DASHBOARD - NOVA ESTRUTURA DOS GRÁFICOS */
+
+.dashboard-charts {
+    display: grid;
+
+    grid-template-columns:
+        repeat(12, minmax(0, 1fr));
+
+    gap: 18px;
+
+    margin-bottom: 24px;
+}
+
+
+/* SITUAÇÃO DA FROTA */
+
+.dashboard-chart-card:nth-child(1) {
+    grid-column:
+        span 6;
+}
+
+
+/* OPERAÇÃO POR STATUS */
+
+.dashboard-chart-card:nth-child(2) {
+    grid-column:
+        span 6;
+}
+
+
+/* UTILIZAÇÃO DA FROTA */
+
+.dashboard-chart-card:nth-child(3) {
+    grid-column:
+        span 8;
+}
+
+
+/* OPERAÇÕES POR TURNO */
+
+.dashboard-chart-card:nth-child(4) {
+    grid-column:
+        span 4;
+}
+
+
+/* MANUTENÇÕES AO LONGO DO TEMPO */
+
+.dashboard-chart-card:nth-child(5) {
+    grid-column:
+        span 6;
+}
+
+
+/* VEÍCULOS COM MAIS MANUTENÇÕES */
+
+.dashboard-chart-card:nth-child(6) {
+    grid-column:
+        span 6;
+}
+
+
+/* REMOVE O COMPORTAMENTO ANTIGO DE LARGURA TOTAL */
+
+.dashboard-chart-wide {
+    grid-column:
+        auto;
+}
+
+
+/* TAMANHOS DOS GRÁFICOS */
+
+.dashboard-chart-container {
+    height: 300px;
+}
+
+
+.dashboard-chart-card:nth-child(3)
+.dashboard-chart-container {
+    height: 330px;
+}
+
+
+.dashboard-chart-card:nth-child(4)
+.dashboard-chart-container {
+    height: 330px;
+}
+
+
+.dashboard-chart-card:nth-child(5)
+.dashboard-chart-container,
+.dashboard-chart-card:nth-child(6)
+.dashboard-chart-container {
+    height: 310px;
+}
+
+
+/*  NOTEBOOKS */
+
+@media (max-width: 1200px) {
+
+    .dashboard-chart-card:nth-child(1),
+    .dashboard-chart-card:nth-child(2),
+    .dashboard-chart-card:nth-child(5),
+    .dashboard-chart-card:nth-child(6) {
+        grid-column:
+            span 6;
+    }
+
+
+    .dashboard-chart-card:nth-child(3) {
+        grid-column:
+            span 7;
+    }
+
+
+    .dashboard-chart-card:nth-child(4) {
+        grid-column:
+            span 5;
+    }
+
+}
+
+
+/*  TABLETS */
+
+@media (max-width: 900px) {
+
+    .dashboard-charts {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .dashboard-chart-card:nth-child(1),
+    .dashboard-chart-card:nth-child(2),
+    .dashboard-chart-card:nth-child(3),
+    .dashboard-chart-card:nth-child(4),
+    .dashboard-chart-card:nth-child(5),
+    .dashboard-chart-card:nth-child(6) {
+        grid-column:
+            auto;
+    }
+
+
+    .dashboard-chart-container,
+    .dashboard-chart-card:nth-child(3)
+    .dashboard-chart-container,
+    .dashboard-chart-card:nth-child(4)
+    .dashboard-chart-container,
+    .dashboard-chart-card:nth-child(5)
+    .dashboard-chart-container,
+    .dashboard-chart-card:nth-child(6)
+    .dashboard-chart-container {
+        height: 290px;
+    }
+
+}
+
+
+/*  CELULAR */
+
+@media (max-width: 600px) {
+
+    .dashboard-chart-card {
+        padding: 18px;
+    }
+
+
+    .dashboard-chart-container,
+    .dashboard-chart-card:nth-child(3)
+    .dashboard-chart-container,
+    .dashboard-chart-card:nth-child(4)
+    .dashboard-chart-container,
+    .dashboard-chart-card:nth-child(5)
+    .dashboard-chart-container,
+    .dashboard-chart-card:nth-child(6)
+    .dashboard-chart-container {
+        height: 260px;
+    }
+
+}
+
+.brand-icon {
+    width: 52px;
+    height: 52px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+}
+
+.brand-logo {
+    width: 42px;
+    height: auto;
+    display: block;
+
+    filter: brightness(0) invert(1);
+}
+
+/* PANORAMA */
+
+.panorama-page-header {
+    margin-bottom: 24px;
+}
+
+
+.page-eyebrow {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: var(--primary);
+
+    font-size: 11px;
+    font-weight: 700;
+
+    letter-spacing: 0.08em;
+
+    text-transform: uppercase;
+}
+
+
+/*  CONTROLES */
+
+.panorama-control-panel {
+    padding: 24px;
+
+    margin-bottom: 18px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+}
+
+
+.panorama-control-header {
+    margin-bottom: 20px;
+}
+
+
+.panorama-control-header h2 {
+    margin-bottom: 5px;
+
+    font-size: 17px;
+}
+
+
+.panorama-control-header p {
+    color: var(--text-soft);
+
+    font-size: 12px;
+}
+
+
+.panorama-controls {
+    display: grid;
+
+    grid-template-columns:
+        minmax(180px, 1fr)
+        minmax(180px, 1fr)
+        auto;
+
+    align-items: end;
+
+    gap: 14px;
+}
+
+
+.panorama-generate-button {
+    min-height: 43px;
+
+    padding-left: 24px;
+    padding-right: 24px;
+
+    white-space: nowrap;
+}
+
+
+/*  RESUMO */
+
+.panorama-summary {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 16px;
+
+    margin-bottom: 18px;
+}
+
+
+.panorama-summary-card {
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 20px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 15px;
+}
+
+
+.panorama-summary-icon {
+    width: 46px;
+    height: 46px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    background: var(--primary-soft);
+
+    border-radius: 12px;
+
+    font-size: 20px;
+}
+
+
+.panorama-summary-card span {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: var(--text-soft);
+
+    font-size: 11px;
+}
+
+
+.panorama-summary-card strong {
+    display: block;
+
+    color: var(--text);
+
+    font-size: 24px;
+    line-height: 1;
+}
+
+
+/*  RELATÓRIO */
+
+.panorama-report-panel {
+    overflow: hidden;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+}
+
+
+.panorama-report-header {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 22px 24px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+
+.panorama-report-header h2 {
+    margin-bottom: 5px;
+
+    font-size: 17px;
+}
+
+
+.panorama-report-header p {
+    color: var(--text-soft);
+
+    font-size: 12px;
+}
+
+
+.panorama-copy-button {
+    flex-shrink: 0;
+
+    white-space: nowrap;
+}
+
+
+.panorama-report-body {
+    padding: 24px;
+
+    background: var(--surface-soft);
+}
+
+
+.panorama-output {
+    width: 100%;
+
+    min-height: 330px;
+
+    margin: 0;
+
+    padding: 22px;
+
+    overflow-x: auto;
+
+    color: var(--text);
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    font-family:
+        "Inter",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    font-size: 13px;
+
+    line-height: 1.75;
+
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+
+/*  PANORAMA - RESPONSIVO */
+
+@media (max-width: 900px) {
+
+    .panorama-controls {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+
+    .panorama-generate-button {
+        grid-column:
+            span 2;
+    }
+
+
+    .panorama-summary {
+        grid-template-columns:
+            1fr;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .panorama-control-panel {
+        padding: 18px;
+    }
+
+
+    .panorama-controls {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .panorama-generate-button {
+        grid-column:
+            auto;
+    }
+
+
+    .panorama-report-header {
+        align-items: stretch;
+
+        flex-direction: column;
+    }
+
+
+    .panorama-copy-button {
+        width: 100%;
+    }
+
+
+    .panorama-report-body {
+        padding: 16px;
+    }
+
+
+    .panorama-output {
+        min-height: 280px;
+
+        padding: 17px;
+    }
+
+}
+
+/* SINCRONIZAÇÃO DA OPERAÇÃO */
+
+.operation-sync-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+
+.sync-status-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    margin-bottom: 18px;
+    padding: 16px 18px;
+
+    background: #ffffff;
+
+    border: 1px solid #dfe6ef;
+    border-left: 4px solid #1f5f9e;
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 4px 14px
+        rgba(15, 44, 78, 0.05);
+}
+
+
+.sync-status-card[hidden] {
+    display: none;
+}
+
+
+.sync-status-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    background: #edf4fb;
+
+    border-radius: 10px;
+
+    font-size: 18px;
+}
+
+
+.sync-status-content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+
+.sync-status-content strong {
+    font-size: 14px;
+    color: #142235;
+}
+
+
+.sync-status-content span {
+    font-size: 13px;
+    color: #68768a;
+}
+
+
+.sync-status-card[data-status="CONCLUIDO"] {
+    border-left-color: #2f9e67;
+}
+
+
+.sync-status-card[data-status="ERRO"] {
+    border-left-color: #d94c4c;
+}
+
+
+.sync-status-card[data-status="SEM_REGISTROS"] {
+    border-left-color: #d99a2b;
+}
+
+
+.sync-status-card.sync-active
+.sync-status-icon {
+    animation:
+        hawkSyncRotation
+        1.2s
+        linear
+        infinite;
+}
+
+
+@keyframes hawkSyncRotation {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+
+@media (
+    max-width: 760px
+) {
+
+    .operation-sync-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
 }

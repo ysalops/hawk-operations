@@ -12,8 +12,14 @@
     <title>Hawk Operations</title>
 
     <link
+        rel="icon"
+        type="image/png"
+        href="/static/assets/logo-hawk-full.png"
+    >
+
+    <link
         rel="stylesheet"
-        href="/static/css/style.css"
+        href="/static/css/style.css?v=11"
     >
 </head>
 
@@ -25,9 +31,76 @@
     <aside class="sidebar">
 
         <div class="brand">
-
+            
             <div class="brand-icon">
-                H
+
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 1054 564"
+                    role="img"
+                    aria-label="Hawk logo"
+                    class="brand-logo-svg"
+                >
+                    <path
+                        fill="currentColor"
+                        d="
+                        M 21 377
+                        C 10 358, 9 322, 11 301
+                        C 14 288, 18 276, 23 269
+                        C 30 255, 45 240, 66 225
+                        C 82 214, 103 205, 126 198
+                        C 146 194, 160 191, 173 190
+                        C 178 174, 187 159, 199 145
+                        C 214 131, 234 121, 258 115
+                        C 289 109, 318 107, 344 107
+                        C 365 107, 383 108, 398 111
+                        C 420 99, 444 90, 474 86
+                        C 510 85, 551 86, 591 93
+                        C 624 99, 662 107, 703 116
+                        C 735 123, 760 128, 789 132
+                        C 810 134, 830 138, 849 139
+                        C 880 139, 901 136, 924 133
+                        C 950 125, 975 111, 999 94
+                        C 1003 122, 998 145, 988 170
+                        C 977 193, 960 214, 942 228
+                        C 925 241, 899 251, 868 257
+                        C 843 266, 815 268, 784 267
+                        C 790 274, 800 281, 813 286
+                        C 826 292, 846 296, 869 298
+                        C 886 298, 899 296, 908 292
+                        C 900 309, 886 324, 871 332
+                        C 853 343, 830 351, 805 357
+                        C 778 359, 751 360, 730 357
+                        C 708 356, 692 355, 684 354
+                        C 694 366, 712 375, 734 382
+                        C 758 388, 778 392, 799 393
+                        C 792 401, 777 410, 757 418
+                        C 732 427, 706 432, 677 436
+                        C 654 436, 634 436, 616 436
+                        C 598 431, 584 427, 569 422
+                        C 572 435, 583 447, 599 455
+                        C 616 461, 636 465, 658 466
+                        C 669 467, 675 467, 678 467
+                        C 671 475, 658 485, 643 494
+                        C 626 504, 607 512, 585 517
+                        C 564 517, 546 517, 530 517
+                        C 514 513, 500 509, 488 503
+                        C 466 493, 444 481, 420 466
+                        C 394 449, 367 431, 339 413
+                        C 312 399, 286 390, 259 386
+                        C 245 384, 232 386, 219 386
+                        C 195 386, 176 386, 157 386
+                        C 134 389, 116 391, 100 394
+                        C 87 396, 78 398, 74 401
+                        C 76 390, 83 382, 95 373
+                        C 110 364, 124 357, 138 352
+                        C 120 351, 108 351, 97 351
+                        C 82 351, 69 353, 56 357
+                        C 44 360, 32 366, 21 377
+                        Z"
+                    />
+                </svg>
+
             </div>
 
             <div>
@@ -57,6 +130,7 @@
 
             <button
                 class="menu-item"
+                id="menuFleet"
                 type="button"
             >
                 <span>🚚</span>
@@ -93,9 +167,9 @@
                 Operação
             </button>
 
-
             <button
                 class="menu-item"
+                id="menuPanorama"
                 type="button"
             >
                 <span>📄</span>
@@ -132,143 +206,493 @@
     </aside>
 
 
-
-    <!-- CONTEÚDO -->
+    <!-- CONTEÚDO PRINCIPAL -->
 
     <main class="main-content">
 
-        <section
-            class="app-view"
-            id="driversView"
-        >
 
-            <header class="topbar">
+<!-- MOTORISTAS -->
 
-                <div>
+<section
+    class="app-view"
+    id="driversView"
+>
 
-                    <p class="eyebrow">
-                        EQUIPE OPERACIONAL
-                    </p>
+    <header class="topbar">
 
-                    <h2>
-                        Motoristas
-                    </h2>
+        <div>
 
-                    <p class="subtitle">
-                        Gerencie os motoristas cadastrados na operação.
-                    </p>
+            <p class="eyebrow">
+                EQUIPE OPERACIONAL
+            </p>
+
+            <h2>
+                Motoristas
+            </h2>
+
+            <p class="subtitle">
+                Gerencie a equipe e acompanhe o histórico operacional.
+            </p>
+
+        </div>
+
+
+        <div class="topbar-actions operation-sync-actions">
+
+            <button
+                class="secondary-button"
+                id="syncOperationButton"
+                type="button"
+            >
+                🔄 Sincronizar operação
+            </button>
+
+
+            <button
+                class="primary-button"
+                id="openOperationModal"
+                type="button"
+            >
+                + Registrar operação
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- RESUMO -->
+
+    <section class="fleet-summary">
+
+        <article class="fleet-stat">
+
+            <span>
+                Total cadastrados
+            </span>
+
+            <strong id="driversRegistered">
+                --
+            </strong>
+
+            <small>
+                Motoristas na base
+            </small>
+
+        </article>
+
+
+        <article class="fleet-stat">
+
+            <span>
+                Ativos
+            </span>
+
+            <strong id="driversTotal">
+                --
+            </strong>
+
+            <small>
+                Disponíveis para operação
+            </small>
+
+        </article>
+
+
+        <article class="fleet-stat">
+
+            <span>
+                Inativos
+            </span>
+
+            <strong id="driversInactive">
+                --
+            </strong>
+
+            <small>
+                Fora da equipe atual
+            </small>
+
+        </article>
+
+
+        <article class="fleet-stat">
+
+            <span>
+                Operações hoje
+            </span>
+
+            <strong id="driversOperationsToday">
+                --
+            </strong>
+
+            <small>
+                Registros com motorista
+            </small>
+
+        </article>
+
+    </section>
+
+
+    <!-- TABELA -->
+
+    <section class="panel">
+
+        <div class="panel-header fleet-panel-header">
+
+            <div>
+
+                <h3>
+                    Motoristas cadastrados
+                </h3>
+
+                <p>
+                    Consulte, edite e acompanhe o histórico da equipe.
+                </p>
+
+            </div>
+
+
+            <div class="fleet-filters">
+
+                <div class="search-box">
+
+                    <span>⌕</span>
+
+                    <input
+                        id="driverSearchInput"
+                        type="text"
+                        placeholder="Buscar motorista..."
+                        autocomplete="off"
+                    >
 
                 </div>
 
 
-                <button
-                    class="primary-button"
-                    id="openDriverModal"
-                    type="button"
+                <select
+                    class="fleet-filter-select"
+                    id="driverStatusFilter"
                 >
-                    + Novo motorista
-                </button>
 
-            </header>
+                    <option value="">
+                        Todos os status
+                    </option>
 
+                    <option value="ATIVO">
+                        Ativos
+                    </option>
 
-            <section class="maintenance-summary">
+                    <option value="INATIVO">
+                        Inativos
+                    </option>
 
-                <div class="maintenance-summary-content">
+                </select>
 
-                    <span class="maintenance-summary-icon">
-                        👤
-                    </span>
+            </div>
 
-                    <div>
-
-                        <strong id="driversTotal">
-                            0
-                        </strong>
-
-                        <span>
-                            motoristas ativos
-                        </span>
-
-                    </div>
-
-                </div>
-
-            </section>
+        </div>
 
 
-            <section class="panel">
+        <div class="table-wrapper">
 
-                <div class="panel-header">
+            <table>
 
-                    <div>
+                <thead>
 
-                        <h3>
-                            Motoristas cadastrados
-                        </h3>
+                    <tr>
 
-                        <p>
-                            Consulte e gerencie a equipe operacional.
-                        </p>
+                        <th>
+                            Nome
+                        </th>
 
-                    </div>
+                        <th>
+                            Telefone
+                        </th>
+
+                        <th>
+                            Observação
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Ações
+                        </th>
+
+                    </tr>
+
+                </thead>
 
 
-                    <div class="search-box">
+                <tbody id="driversTable">
 
-                        <span>⌕</span>
+                    <tr>
 
-                        <input
-                            id="driverSearchInput"
-                            type="text"
-                            placeholder="Buscar motorista..."
-                            autocomplete="off"
+                        <td
+                            colspan="5"
+                            class="loading"
                         >
+                            Carregando motoristas...
+                        </td>
 
-                    </div>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</section>
+
+
+
+<!-- FROTA -->
+
+<section
+    class="app-view"
+    id="fleetView"
+>
+
+    <header class="topbar">
+
+        <div>
+
+            <p class="eyebrow">
+                GESTÃO DE FROTA
+            </p>
+
+            <h2>
+                Frota
+            </h2>
+
+            <p class="subtitle">
+                Consulte e gerencie todos os veículos da operação.
+            </p>
+
+        </div>
+
+
+        <button
+            class="primary-button"
+            id="openFleetVehicleModal"
+            type="button"
+        >
+            + Novo veículo
+        </button>
+
+    </header>
+
+
+    <!-- RESUMO -->
+
+    <section class="fleet-summary">
+
+        <article class="fleet-stat">
+
+            <span>
+                Total da frota
+            </span>
+
+            <strong id="fleetTotal">
+                --
+            </strong>
+
+            <small>
+                Veículos cadastrados
+            </small>
+
+        </article>
+
+
+        <article class="fleet-stat">
+
+            <span>
+                Disponíveis
+            </span>
+
+            <strong id="fleetAvailable">
+                --
+            </strong>
+
+            <small>
+                Prontos para operação
+            </small>
+
+        </article>
+
+
+        <article class="fleet-stat">
+
+            <span>
+                Em manutenção
+            </span>
+
+            <strong id="fleetMaintenance">
+                --
+            </strong>
+
+            <small>
+                Temporariamente indisponíveis
+            </small>
+
+        </article>
+
+
+        <article class="fleet-stat">
+
+            <span>
+                Inativos
+            </span>
+
+            <strong id="fleetInactive">
+                --
+            </strong>
+
+            <small>
+                Fora da frota ativa
+            </small>
+
+        </article>
+
+    </section>
+
+
+    <!-- TABELA -->
+
+    <section class="panel">
+
+        <div class="panel-header fleet-panel-header">
+
+            <div>
+
+                <h3>
+                    Veículos cadastrados
+                </h3>
+
+                <p>
+                    Consulte os veículos e acompanhe seu status atual.
+                </p>
+
+            </div>
+
+
+            <div class="fleet-filters">
+
+                <div class="search-box">
+
+                    <span>⌕</span>
+
+                    <input
+                        id="fleetSearchInput"
+                        type="text"
+                        placeholder="Buscar por placa..."
+                        autocomplete="off"
+                    >
 
                 </div>
 
 
-                <div class="table-wrapper">
+                <select
+                    class="fleet-filter-select"
+                    id="fleetStatusFilter"
+                >
 
-                    <table>
+                    <option value="">
+                        Todos os status
+                    </option>
 
-                        <thead>
+                    <option value="DISPONIVEL">
+                        Disponíveis
+                    </option>
 
-                            <tr>
-                                <th>Nome</th>
-                                <th>Telefone</th>
-                                <th>Status</th>
-                                <th>Ação</th>
-                            </tr>
+                    <option value="MANUTENCAO">
+                        Em manutenção
+                    </option>
 
-                        </thead>
+                    <option value="INATIVO">
+                        Inativos
+                    </option>
+
+                </select>
 
 
-                        <tbody id="driversTable">
+                <select
+                    class="fleet-filter-select"
+                    id="fleetTypeFilter"
+                >
 
-                            <tr>
+                    <option value="">
+                        Todos os tipos
+                    </option>
 
-                                <td
-                                    colspan="4"
-                                    class="loading"
-                                >
-                                    Carregando motoristas...
-                                </td>
+                </select>
 
-                            </tr>
+            </div>
 
-                        </tbody>
+        </div>
 
-                    </table>
 
-                </div>
+        <div class="table-wrapper">
 
-            </section>
+            <table>
 
-        </section>
+                <thead>
 
+                    <tr>
+
+                        <th>
+                            Placa
+                        </th>
+
+                        <th>
+                            Tipo
+                        </th>
+
+                        <th>
+                            Categoria
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Ações
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="fleetTable">
+
+                    <tr>
+
+                        <td
+                            colspan="5"
+                            class="loading"
+                        >
+                            Carregando frota...
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</section>
 
         <!-- DASHBOARD -->
 
@@ -426,6 +850,220 @@
 
             </section>
 
+<!-- GRÁFICOS DO DASHBOARD -->
+
+<section class="dashboard-charts">
+
+    <!-- SITUAÇÃO DA FROTA -->
+
+    <article class="dashboard-chart-card">
+
+        <div class="dashboard-chart-header">
+
+            <div>
+
+                <h3>
+                    Situação atual da frota
+                </h3>
+
+                <p>
+                    Distribuição dos veículos por situação.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="dashboard-chart-container">
+
+            <canvas id="dashboardFleetChart"></canvas>
+
+        </div>
+
+    </article>
+
+
+    <!-- OPERAÇÃO POR STATUS -->
+
+    <article class="dashboard-chart-card">
+
+        <div class="dashboard-chart-header">
+
+            <div>
+
+                <h3>
+                    Operação de hoje por status
+                </h3>
+
+                <p>
+                    Distribuição dos registros operacionais de hoje.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="dashboard-chart-container">
+
+            <canvas id="dashboardOperationStatusChart"></canvas>
+
+        </div>
+
+    </article>
+
+
+    <!-- UTILIZAÇÃO DA FROTA -->
+
+    <article
+        class="
+            dashboard-chart-card
+            dashboard-chart-wide
+        "
+    >
+
+        <div class="dashboard-chart-header">
+
+            <div>
+
+                <h3>
+                    Utilização da frota
+                </h3>
+
+                <p>
+                    Quantidade de veículos distintos utilizados nos últimos 30 dias.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="
+                dashboard-chart-container
+                dashboard-chart-container-wide
+            "
+        >
+
+            <canvas id="dashboardUtilizationChart"></canvas>
+
+        </div>
+
+    </article>
+
+
+    <!-- OPERAÇÕES POR TURNO -->
+
+    <article class="dashboard-chart-card">
+
+        <div class="dashboard-chart-header">
+
+            <div>
+
+                <h3>
+                    Operações por turno
+                </h3>
+
+                <p>
+                    Registros de hoje por período operacional.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="dashboard-chart-container">
+
+            <canvas id="dashboardShiftChart"></canvas>
+
+        </div>
+
+    </article>
+
+
+    <!-- MANUTENÇÕES AO LONGO DO TEMPO -->
+
+    <article
+        class="
+            dashboard-chart-card
+            dashboard-chart-wide
+        "
+    >
+
+        <div class="dashboard-chart-header">
+
+            <div>
+
+                <h3>
+                    Manutenções ao longo do tempo
+                </h3>
+
+                <p>
+                    Quantidade de ocorrências registradas nos últimos 6 meses.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="
+                dashboard-chart-container
+                dashboard-chart-container-wide
+            "
+        >
+
+            <canvas id="dashboardMaintenanceTrendChart"></canvas>
+
+        </div>
+
+    </article>
+
+
+    <!-- VEÍCULOS COM MAIS MANUTENÇÕES -->
+
+    <article
+        class="
+            dashboard-chart-card
+            dashboard-chart-wide
+        "
+    >
+
+        <div class="dashboard-chart-header">
+
+            <div>
+
+                <h3>
+                    Veículos com mais ocorrências
+                </h3>
+
+                <p>
+                    Ranking dos veículos com maior número de manutenções registradas.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="
+                dashboard-chart-container
+                dashboard-chart-container-wide
+            "
+        >
+
+            <canvas id="dashboardTopMaintenanceVehiclesChart"></canvas>
+
+        </div>
+
+    </article>
+
+</section>
 
 
             <!-- FROTA -->
@@ -508,135 +1146,297 @@
         </section>
 
 
+<!-- MANUTENÇÕES -->
 
-        <!--  MANUTENÇÕES -->
+<section
+    class="app-view"
+    id="maintenanceView"
+>
 
-        <section
-            class="app-view"
-            id="maintenanceView"
+    <header class="topbar">
+
+        <div>
+
+            <p class="eyebrow">
+                GESTÃO DE FROTA
+            </p>
+
+            <h2>
+                Manutenções
+            </h2>
+
+            <p class="subtitle">
+                Controle os veículos indisponíveis e consulte o histórico de ocorrências.
+            </p>
+
+        </div>
+
+
+        <button
+            class="primary-button"
+            id="openMaintenanceModal"
+            type="button"
         >
+            + Nova manutenção
+        </button>
 
-            <header class="topbar">
-
-                <div>
-
-                    <p class="eyebrow">
-                        GESTÃO DE FROTA
-                    </p>
-
-                    <h2>
-                        Manutenções
-                    </h2>
-
-                    <p class="subtitle">
-                        Controle os veículos indisponíveis e seus retornos.
-                    </p>
-
-                </div>
+    </header>
 
 
-                <button
-                    class="primary-button"
-                    id="openMaintenanceModal"
-                    type="button"
-                >
-                    + Nova manutenção
-                </button>
+    <!-- RESUMO -->
 
-            </header>
+    <section class="fleet-summary">
+
+        <article class="fleet-stat">
+
+            <span>
+                Em manutenção
+            </span>
+
+            <strong id="maintenanceTotal">
+                --
+            </strong>
+
+            <small>
+                Veículos indisponíveis agora
+            </small>
+
+        </article>
 
 
+        <article class="fleet-stat">
 
-            <section class="maintenance-summary">
+            <span>
+                Finalizadas
+            </span>
 
-                <div class="maintenance-summary-content">
+            <strong id="maintenanceFinishedTotal">
+                --
+            </strong>
 
-                    <span class="maintenance-summary-icon">
-                        🛠
+            <small>
+                Manutenções concluídas
+            </small>
+
+        </article>
+
+
+        <article class="fleet-stat">
+
+            <span>
+                Retornos atrasados
+            </span>
+
+            <strong id="maintenanceOverdueTotal">
+                --
+            </strong>
+
+            <small>
+                Previsão de retorno vencida
+            </small>
+
+        </article>
+
+
+        <article class="fleet-stat">
+
+            <span>
+                Total de ocorrências
+            </span>
+
+            <strong id="maintenanceAllTotal">
+                --
+            </strong>
+
+            <small>
+                Histórico completo
+            </small>
+
+        </article>
+
+    </section>
+
+
+    <!-- EM MANUTENÇÃO -->
+
+    <section class="panel maintenance-active-panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h3>
+                    Veículos em manutenção
+                </h3>
+
+                <p>
+                    Acompanhe os motivos e as previsões de retorno.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Placa
+                        </th>
+
+                        <th>
+                            Motivo
+                        </th>
+
+                        <th>
+                            Entrada
+                        </th>
+
+                        <th>
+                            Previsão
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Ações
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="maintenanceTable">
+
+                    <tr>
+
+                        <td
+                            colspan="6"
+                            class="loading"
+                        >
+                            Carregando manutenções...
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <!-- HISTÓRICO -->
+
+    <section class="panel maintenance-history-panel">
+
+        <div class="panel-header fleet-panel-header">
+
+            <div>
+
+                <h3>
+                    Histórico de manutenções
+                </h3>
+
+                <p>
+                    Consulte todas as manutenções já finalizadas.
+                </p>
+
+            </div>
+
+
+            <div class="fleet-filters">
+
+                <div class="search-box">
+
+                    <span>
+                        ⌕
                     </span>
 
-                    <div>
-
-                        <strong id="maintenanceTotal">
-                            0
-                        </strong>
-
-                        <span>
-                            veículos atualmente em manutenção
-                        </span>
-
-                    </div>
+                    <input
+                        id="maintenanceHistorySearch"
+                        type="text"
+                        placeholder="Buscar por placa..."
+                        autocomplete="off"
+                    >
 
                 </div>
 
-            </section>
+            </div>
+
+        </div>
 
 
+        <div class="table-wrapper">
 
-            <section class="panel">
+            <table>
 
-                <div class="panel-header">
+                <thead>
 
-                    <div>
+                    <tr>
 
-                        <h3>
-                            Veículos em manutenção
-                        </h3>
+                        <th>
+                            Placa
+                        </th>
 
-                        <p>
-                            Acompanhe os motivos e previsões de retorno.
-                        </p>
+                        <th>
+                            Motivo
+                        </th>
 
-                    </div>
+                        <th>
+                            Entrada
+                        </th>
 
-                </div>
+                        <th>
+                            Retorno
+                        </th>
 
+                        <th>
+                            Condição
+                        </th>
 
-                <div class="table-wrapper">
+                        <th>
+                            Ações
+                        </th>
 
-                    <table>
+                    </tr>
 
-                        <thead>
-
-                            <tr>
-
-                                <th>Placa</th>
-
-                                <th>Motivo</th>
-
-                                <th>Entrada</th>
-
-                                <th>Previsão</th>
-
-                                <th>Ação</th>
-
-                            </tr>
-
-                        </thead>
+                </thead>
 
 
-                        <tbody id="maintenanceTable">
+                <tbody id="maintenanceHistoryTable">
 
-                            <tr>
+                    <tr>
 
-                                <td
-                                    colspan="5"
-                                    class="loading"
-                                >
-                                    Carregando manutenções...
-                                </td>
+                        <td
+                            colspan="6"
+                            class="loading"
+                        >
+                            Carregando histórico...
+                        </td>
 
-                            </tr>
+                    </tr>
 
-                        </tbody>
+                </tbody>
 
-                    </table>
+            </table>
 
-                </div>
+        </div>
 
-            </section>
+    </section>
 
-        </section>
+</section>
 
     <!-- OPERAÇÃO -->
 
@@ -674,6 +1474,33 @@
 
         </header>
 
+    <section
+        class="sync-status-card"
+        id="syncStatusCard"
+        hidden
+    >
+
+        <div
+            class="sync-status-icon"
+            id="syncStatusIcon"
+        >
+            🔄
+        </div>
+
+
+        <div class="sync-status-content">
+
+            <strong id="syncStatusTitle">
+                Sincronização
+            </strong>
+
+            <span id="syncStatusMessage">
+                Preparando sincronização...
+            </span>
+
+        </div>
+
+    </section>
 
         <section class="operation-filters">
 
@@ -782,6 +1609,242 @@
 
     </section>
 
+    <!-- PANORAMA -->
+
+<section
+    id="panoramaView"
+    class="app-view"
+>
+
+    <!-- CABEÇALHO -->
+
+    <div class="page-header panorama-page-header">
+
+        <div>
+
+            <span class="page-eyebrow">
+                Relatório operacional
+            </span>
+
+            <h1>
+                Panorama
+            </h1>
+
+            <p>
+                Gere o resumo operacional do período e copie o relatório
+                pronto para compartilhamento.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- CONFIGURAÇÃO DO PANORAMA -->
+
+    <section class="panorama-control-panel">
+
+        <div class="panorama-control-header">
+
+            <div>
+
+                <h2>
+                    Gerar panorama
+                </h2>
+
+                <p>
+                    Selecione a data e o turno que deseja consultar.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="panorama-controls">
+
+            <div class="form-group">
+
+                <label for="panoramaDate">
+                    Data
+                </label>
+
+                <input
+                    type="date"
+                    id="panoramaDate"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="panoramaShift">
+                    Turno
+                </label>
+
+                <select id="panoramaShift">
+
+                    <option value="">
+                        Todos os turnos
+                    </option>
+
+                    <option value="Manhã">
+                        Manhã
+                    </option>
+
+                    <option value="Tarde">
+                        Tarde
+                    </option>
+
+                    <option value="Noite">
+                        Noite
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="generatePanoramaButton"
+                class="primary-button panorama-generate-button"
+            >
+                Gerar panorama
+            </button>
+
+        </div>
+
+
+        <p
+            id="panoramaMessage"
+            class="form-message"
+        ></p>
+
+    </section>
+
+
+    <!-- RESUMO -->
+
+    <section class="panorama-summary">
+
+        <article class="panorama-summary-card">
+
+            <div class="panorama-summary-icon">
+                🚚
+            </div>
+
+            <div>
+
+                <span>
+                    Total da frota
+                </span>
+
+                <strong id="panoramaTotalVehicles">
+                    0
+                </strong>
+
+            </div>
+
+        </article>
+
+
+        <article class="panorama-summary-card">
+
+            <div class="panorama-summary-icon">
+                🛠
+            </div>
+
+            <div>
+
+                <span>
+                    Em manutenção
+                </span>
+
+                <strong id="panoramaMaintenance">
+                    0
+                </strong>
+
+            </div>
+
+        </article>
+
+
+        <article class="panorama-summary-card">
+
+            <div class="panorama-summary-icon">
+                📍
+            </div>
+
+            <div>
+
+                <span>
+                    Registros operacionais
+                </span>
+
+                <strong id="panoramaOperations">
+                    0
+                </strong>
+
+            </div>
+
+        </article>
+
+    </section>
+
+
+    <!-- RELATÓRIO GERADO -->
+
+    <section class="panorama-report-panel">
+
+        <div class="panorama-report-header">
+
+            <div>
+
+                <span class="page-eyebrow">
+                    Pré-visualização
+                </span>
+
+                <h2>
+                    Relatório gerado
+                </h2>
+
+                <p>
+                    O conteúdo abaixo está preparado para copiar e enviar
+                    pelo WhatsApp.
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="copyPanoramaButton"
+                class="secondary-button panorama-copy-button"
+                disabled
+            >
+                Copiar texto
+            </button>
+
+        </div>
+
+
+        <div class="panorama-report-body">
+
+            <pre id="panoramaText" class="panorama-output">Selecione uma data e clique em "Gerar panorama" para visualizar o relatório.</pre>
+
+        </div>
+
+    </section>
+
+</section>
+
+
+
+
+    </main>
+
     <!-- MODAL NOVO VEÍCULO -->
 
     <div
@@ -833,7 +1896,7 @@
                         id="vehiclePlate"
                         type="text"
                         placeholder="Ex: ABC1D23"
-                        maxlength="10"
+                        maxlength="20"
                         autocomplete="off"
                         required
                     >
@@ -907,6 +1970,21 @@
                 </div>
 
 
+                <div class="form-group">
+
+                    <label for="vehicleObservation">
+                        Observação
+                    </label>
+
+                    <textarea
+                        id="vehicleObservation"
+                        rows="3"
+                        placeholder="Informação adicional sobre o veículo..."
+                    ></textarea>
+
+                </div>
+
+
                 <div
                     class="form-message"
                     id="vehicleFormMessage"
@@ -940,7 +2018,327 @@
 
     </div>
 
-    </main>
+
+    <!-- MODAL EDITAR VEÍCULO -->
+
+    <div
+        class="modal-overlay"
+        id="editVehicleModal"
+    >
+
+        <div class="modal">
+
+            <div class="modal-header">
+
+                <div>
+
+                    <p class="eyebrow">
+                        GESTÃO DE FROTA
+                    </p>
+
+                    <h3>
+                        Editar veículo
+                    </h3>
+
+                    <p>
+                        Atualize os dados cadastrais e a situação do veículo.
+                    </p>
+
+                </div>
+
+
+                <button
+                    class="modal-close"
+                    id="closeEditVehicleModal"
+                    type="button"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <form id="editVehicleForm">
+
+                <input
+                    id="editVehicleId"
+                    type="hidden"
+                >
+
+
+                <div class="form-group">
+
+                    <label for="editVehiclePlate">
+                        Placa
+                    </label>
+
+                    <input
+                        id="editVehiclePlate"
+                        type="text"
+                        maxlength="20"
+                        autocomplete="off"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="editVehicleType">
+                        Tipo do veículo
+                    </label>
+
+                    <select id="editVehicleType">
+
+                        <option value="">
+                            Não informado
+                        </option>
+
+                        <option value="Fiorino">
+                            Fiorino
+                        </option>
+
+                        <option value="Doblò">
+                            Doblò
+                        </option>
+
+                        <option value="Van">
+                            Van
+                        </option>
+
+                        <option value="HR">
+                            HR
+                        </option>
+
+                        <option value="VUC">
+                            VUC
+                        </option>
+
+                        <option value="Outro">
+                            Outro
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="editVehicleCategory">
+                        Categoria
+                    </label>
+
+                    <select id="editVehicleCategory">
+
+                        <option value="Frota fixa">
+                            Frota fixa
+                        </option>
+
+                        <option value="Reserva">
+                            Reserva
+                        </option>
+
+                        <option value="Terceirizado">
+                            Terceirizado
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="editVehicleStatus">
+                        Situação do cadastro
+                    </label>
+
+                    <select id="editVehicleStatus">
+
+                        <option value="true">
+                            Ativo
+                        </option>
+
+                        <option value="false">
+                            Inativo
+                        </option>
+
+                    </select>
+
+                    <small class="form-help">
+                        Inativo significa que o veículo permanece no histórico,
+                        mas não participa mais da frota operacional atual.
+                    </small>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="editVehicleObservation">
+                        Observação
+                    </label>
+
+                    <textarea
+                        id="editVehicleObservation"
+                        rows="3"
+                        placeholder="Informação adicional sobre o veículo..."
+                    ></textarea>
+
+                </div>
+
+
+                <div
+                    class="form-message"
+                    id="editVehicleFormMessage"
+                ></div>
+
+
+                <div class="modal-actions">
+
+                    <button
+                        class="secondary-button"
+                        id="cancelEditVehicleModal"
+                        type="button"
+                    >
+                        Cancelar
+                    </button>
+
+
+                    <button
+                        class="primary-button"
+                        id="saveEditVehicleButton"
+                        type="submit"
+                    >
+                        Salvar alterações
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- MODAL HISTÓRICO DO VEÍCULO -->
+
+    <div
+        class="modal-overlay"
+        id="vehicleHistoryModal"
+    >
+
+        <div class="modal modal-large">
+
+            <div class="modal-header">
+
+                <div>
+
+                    <p class="eyebrow">
+                        HISTÓRICO DO VEÍCULO
+                    </p>
+
+                    <h3 id="vehicleHistoryPlate">
+                        Veículo
+                    </h3>
+
+                    <p id="vehicleHistoryMeta">
+                        Carregando informações...
+                    </p>
+
+                </div>
+
+
+                <button
+                    class="modal-close"
+                    id="closeVehicleHistoryModal"
+                    type="button"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <section class="vehicle-history-summary">
+
+                <article>
+
+                    <span>
+                        Operações
+                    </span>
+
+                    <strong id="vehicleHistoryOperationsTotal">
+                        --
+                    </strong>
+
+                </article>
+
+
+                <article>
+
+                    <span>
+                        Manutenções
+                    </span>
+
+                    <strong id="vehicleHistoryMaintenanceTotal">
+                        --
+                    </strong>
+
+                </article>
+
+
+                <article>
+
+                    <span>
+                        Situação atual
+                    </span>
+
+                    <strong id="vehicleHistoryStatus">
+                        --
+                    </strong>
+
+                </article>
+
+            </section>
+
+
+            <div
+                class="form-message"
+                id="vehicleHistoryMessage"
+            ></div>
+
+
+            <div
+                class="vehicle-history-content"
+                id="vehicleHistoryContent"
+            >
+
+                <p class="loading">
+                    Carregando histórico...
+                </p>
+
+            </div>
+
+
+            <div class="modal-actions">
+
+                <button
+                    class="secondary-button"
+                    id="closeVehicleHistoryButton"
+                    type="button"
+                >
+                    Fechar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
 
     <!-- MODAL NOVA MANUTENÇÃO -->
 
@@ -1083,114 +2481,660 @@
 
     </div>
 
-        <!-- =========================
-            MODAL MOTORISTA
-        ========================== -->
+<!-- MODAL NOVO MOTORISTA -->
 
-        <div
-            class="modal-overlay"
-            id="driverModal"
-        >
+<div
+    class="modal-overlay"
+    id="driverModal"
+>
 
-            <div class="modal">
+    <div class="modal">
 
-                <div class="modal-header">
+        <div class="modal-header">
 
-                    <div>
+            <div>
 
-                        <p class="eyebrow">
-                            NOVO CADASTRO
-                        </p>
+                <p class="eyebrow">
+                    NOVO CADASTRO
+                </p>
 
-                        <h3>
-                            Adicionar motorista
-                        </h3>
+                <h3>
+                    Adicionar motorista
+                </h3>
 
-                        <p>
-                            Cadastre um motorista na base operacional.
-                        </p>
-
-                    </div>
-
-
-                    <button
-                        class="modal-close"
-                        id="closeDriverModal"
-                        type="button"
-                    >
-                        ×
-                    </button>
-
-                </div>
-
-
-                <form id="driverForm">
-
-                    <div class="form-group">
-
-                        <label for="driverName">
-                            Nome
-                        </label>
-
-                        <input
-                            id="driverName"
-                            type="text"
-                            placeholder="Nome completo"
-                            autocomplete="off"
-                            required
-                        >
-
-                    </div>
-
-
-                    <div class="form-group">
-
-                        <label for="driverPhone">
-                            Telefone
-                        </label>
-
-                        <input
-                            id="driverPhone"
-                            type="text"
-                            placeholder="(11) 99999-9999"
-                            autocomplete="off"
-                        >
-
-                    </div>
-
-
-                    <div
-                        class="form-message"
-                        id="driverFormMessage"
-                    ></div>
-
-
-                    <div class="modal-actions">
-
-                        <button
-                            class="secondary-button"
-                            id="cancelDriverModal"
-                            type="button"
-                        >
-                            Cancelar
-                        </button>
-
-
-                        <button
-                            class="primary-button"
-                            id="saveDriverButton"
-                            type="submit"
-                        >
-                            Cadastrar motorista
-                        </button>
-
-                    </div>
-
-                </form>
+                <p>
+                    Cadastre um motorista na base operacional.
+                </p>
 
             </div>
 
+
+            <button
+                class="modal-close"
+                id="closeDriverModal"
+                type="button"
+            >
+                ×
+            </button>
+
         </div>
+
+
+        <form id="driverForm">
+
+            <div class="form-group">
+
+                <label for="driverName">
+                    Nome
+                </label>
+
+                <input
+                    id="driverName"
+                    type="text"
+                    placeholder="Nome completo"
+                    autocomplete="off"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="driverPhone">
+                    Telefone
+                </label>
+
+                <input
+                    id="driverPhone"
+                    type="text"
+                    placeholder="(11) 99999-9999"
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="driverObservation">
+                    Observação
+                </label>
+
+                <textarea
+                    id="driverObservation"
+                    rows="3"
+                    placeholder="Informações adicionais sobre o motorista..."
+                ></textarea>
+
+            </div>
+
+
+            <div
+                class="form-message"
+                id="driverFormMessage"
+            ></div>
+
+
+            <div class="modal-actions">
+
+                <button
+                    class="secondary-button"
+                    id="cancelDriverModal"
+                    type="button"
+                >
+                    Cancelar
+                </button>
+
+
+                <button
+                    class="primary-button"
+                    id="saveDriverButton"
+                    type="submit"
+                >
+                    Cadastrar motorista
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!--  MODAL FINALIZAR MANUTENÇÃO -->
+
+<div
+    class="modal-overlay"
+    id="finishMaintenanceModal"
+>
+
+    <div class="modal">
+
+        <div class="modal-header">
+
+            <div>
+
+                <p class="eyebrow">
+                    RETORNO DO VEÍCULO
+                </p>
+
+                <h3>
+                    Finalizar manutenção
+                </h3>
+
+                <p id="finishMaintenanceVehicleInfo">
+                    Informe os dados de retorno do veículo.
+                </p>
+
+            </div>
+
+
+            <button
+                class="modal-close"
+                id="closeFinishMaintenanceModal"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="finishMaintenanceForm">
+
+            <input
+                id="finishMaintenanceId"
+                type="hidden"
+            >
+
+
+            <div class="form-group">
+
+                <label for="finishMaintenanceReturnDate">
+                    Data de retorno
+                </label>
+
+                <input
+                    id="finishMaintenanceReturnDate"
+                    type="date"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="finishMaintenanceService">
+                    Serviço realizado
+                </label>
+
+                <textarea
+                    id="finishMaintenanceService"
+                    rows="3"
+                    placeholder="Ex: Troca das pastilhas e revisão do sistema de freio"
+                ></textarea>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="finishMaintenanceCondition">
+                    Condição do retorno
+                </label>
+
+                <select id="finishMaintenanceCondition">
+
+                    <option value="">
+                        Selecione
+                    </option>
+
+                    <option value="Resolvido">
+                        Resolvido
+                    </option>
+
+                    <option value="Parcialmente resolvido">
+                        Parcialmente resolvido
+                    </option>
+
+                    <option value="Retorno com acompanhamento">
+                        Retorno com acompanhamento
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="finishMaintenanceWorkshop">
+                    Oficina
+                </label>
+
+                <input
+                    id="finishMaintenanceWorkshop"
+                    type="text"
+                    placeholder="Nome da oficina"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="finishMaintenanceCost">
+                    Custo
+                </label>
+
+                <input
+                    id="finishMaintenanceCost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0,00"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="finishMaintenanceObservation">
+                    Observação de retorno
+                </label>
+
+                <textarea
+                    id="finishMaintenanceObservation"
+                    rows="3"
+                    placeholder="Informações adicionais sobre o retorno..."
+                ></textarea>
+
+            </div>
+
+
+            <div
+                class="form-message"
+                id="finishMaintenanceMessage"
+            ></div>
+
+
+            <div class="modal-actions">
+
+                <button
+                    class="secondary-button"
+                    id="cancelFinishMaintenanceModal"
+                    type="button"
+                >
+                    Cancelar
+                </button>
+
+
+                <button
+                    class="primary-button"
+                    id="saveFinishMaintenanceButton"
+                    type="submit"
+                >
+                    Finalizar manutenção
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!--  MODAL DETALHES DA MANUTENÇÃO -->
+
+<div
+    class="modal-overlay"
+    id="maintenanceDetailsModal"
+>
+
+    <div class="modal modal-large">
+
+        <div class="modal-header">
+
+            <div>
+
+                <p class="eyebrow">
+                    HISTÓRICO DE MANUTENÇÃO
+                </p>
+
+                <h3 id="maintenanceDetailsVehicle">
+                    Veículo
+                </h3>
+
+                <p id="maintenanceDetailsPeriod">
+                    Detalhes da ocorrência
+                </p>
+
+            </div>
+
+
+            <button
+                class="modal-close"
+                id="closeMaintenanceDetailsModal"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div
+            class="maintenance-details-content"
+            id="maintenanceDetailsContent"
+        >
+
+            <p class="loading">
+                Carregando informações...
+            </p>
+
+        </div>
+
+
+        <div class="modal-actions">
+
+            <button
+                class="secondary-button"
+                id="closeMaintenanceDetailsButton"
+                type="button"
+            >
+                Fechar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!--  MODAL EDITAR MOTORISTA-->
+
+<div
+    class="modal-overlay"
+    id="editDriverModal"
+>
+
+    <div class="modal">
+
+        <div class="modal-header">
+
+            <div>
+
+                <p class="eyebrow">
+                    EDITAR CADASTRO
+                </p>
+
+                <h3>
+                    Editar motorista
+                </h3>
+
+                <p>
+                    Atualize as informações do motorista.
+                </p>
+
+            </div>
+
+
+            <button
+                class="modal-close"
+                id="closeEditDriverModal"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="editDriverForm">
+
+            <input
+                id="editDriverId"
+                type="hidden"
+            >
+
+
+            <div class="form-group">
+
+                <label for="editDriverName">
+                    Nome
+                </label>
+
+                <input
+                    id="editDriverName"
+                    type="text"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="editDriverPhone">
+                    Telefone
+                </label>
+
+                <input
+                    id="editDriverPhone"
+                    type="text"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="editDriverObservation">
+                    Observação
+                </label>
+
+                <textarea
+                    id="editDriverObservation"
+                    rows="3"
+                    placeholder="Informações adicionais..."
+                ></textarea>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="editDriverStatus">
+                    Situação do cadastro
+                </label>
+
+                <select id="editDriverStatus">
+
+                    <option value="true">
+                        Ativo
+                    </option>
+
+                    <option value="false">
+                        Inativo
+                    </option>
+
+                </select>
+
+                <small class="form-help">
+                    Um motorista inativo permanece no histórico,
+                    mas não aparece como disponível para novas operações.
+                </small>
+
+            </div>
+
+
+            <div
+                class="form-message"
+                id="editDriverFormMessage"
+            ></div>
+
+
+            <div class="modal-actions">
+
+                <button
+                    class="secondary-button"
+                    id="cancelEditDriverModal"
+                    type="button"
+                >
+                    Cancelar
+                </button>
+
+
+                <button
+                    class="primary-button"
+                    id="saveEditDriverButton"
+                    type="submit"
+                >
+                    Salvar alterações
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- MODAL HISTÓRICO DO MOTORISTA-->
+
+<div
+    class="modal-overlay"
+    id="driverHistoryModal"
+>
+
+    <div class="modal modal-large">
+
+        <div class="modal-header">
+
+            <div>
+
+                <p class="eyebrow">
+                    HISTÓRICO OPERACIONAL
+                </p>
+
+                <h3 id="driverHistoryName">
+                    Motorista
+                </h3>
+
+                <p id="driverHistoryMeta">
+                    Carregando informações...
+                </p>
+
+            </div>
+
+
+            <button
+                class="modal-close"
+                id="closeDriverHistoryModal"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <section class="driver-history-summary">
+
+            <article>
+
+                <span>
+                    Operações
+                </span>
+
+                <strong id="driverHistoryOperationsTotal">
+                    --
+                </strong>
+
+            </article>
+
+
+            <article>
+
+                <span>
+                    Veículos utilizados
+                </span>
+
+                <strong id="driverHistoryVehiclesTotal">
+                    --
+                </strong>
+
+            </article>
+
+
+            <article>
+
+                <span>
+                    Rotas registradas
+                </span>
+
+                <strong id="driverHistoryRoutesTotal">
+                    --
+                </strong>
+
+            </article>
+
+
+            <article>
+
+                <span>
+                    Última atividade
+                </span>
+
+                <strong id="driverHistoryLastActivity">
+                    --
+                </strong>
+
+            </article>
+
+        </section>
+
+
+        <div
+            class="form-message"
+            id="driverHistoryMessage"
+        ></div>
+
+
+        <div
+            class="driver-history-content"
+            id="driverHistoryContent"
+        >
+
+            <p class="loading">
+                Carregando histórico...
+            </p>
+
+        </div>
+
+
+        <div class="modal-actions">
+
+            <button
+                class="secondary-button"
+                id="closeDriverHistoryButton"
+                type="button"
+            >
+                Fechar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 
         <!--  MODAL OPERAÇÃO -->
 
@@ -1430,7 +3374,11 @@
 
         </div>
     
-    <script src="/static/js/app.js"></script>
+    <script
+    src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"
+    ></script>
+
+    <script src="/static/js/app.js?v=12"></script>
 
 </body>
 
