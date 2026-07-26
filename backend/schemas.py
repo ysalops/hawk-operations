@@ -4,8 +4,9 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict
 
 
+# =====================================================
 # VEÍCULOS
-
+# =====================================================
 
 class VeiculoBase(BaseModel):
     placa: str
@@ -36,8 +37,10 @@ class VeiculoResponse(VeiculoBase):
         from_attributes=True
     )
 
-# MOTORISTAS
 
+# =====================================================
+# MOTORISTAS
+# =====================================================
 
 class MotoristaCreate(BaseModel):
     nome: str
@@ -55,13 +58,10 @@ class MotoristaUpdate(BaseModel):
 
 class MotoristaResponse(BaseModel):
     id: int
-
     nome: str
     telefone: str | None
     observacao: str | None
-
     ativo: bool
-
     criado_em: datetime
     atualizado_em: datetime
 
@@ -70,60 +70,40 @@ class MotoristaResponse(BaseModel):
     )
 
 
+# =====================================================
 # MANUTENÇÕES
-
+# =====================================================
 
 class ManutencaoCreate(BaseModel):
     veiculo_id: int
-
     motivo: str
-
     data_entrada: date
-
     previsao_retorno: date | None = None
 
 
 class ManutencaoFinalizar(BaseModel):
     data_retorno: date | None = None
-
     servico_realizado: str | None = None
-
     condicao_retorno: str | None = None
-
     observacao_retorno: str | None = None
-
     oficina: str | None = None
-
     custo: Decimal | None = None
 
 
 class ManutencaoResponse(BaseModel):
     id: int
-
     veiculo_id: int
-
     motivo: str
-
     data_entrada: date
-
     previsao_retorno: date | None
-
     data_retorno: date | None
-
     status: str
-
     servico_realizado: str | None
-
     condicao_retorno: str | None
-
     observacao_retorno: str | None
-
     oficina: str | None
-
     custo: Decimal | None
-
     criado_em: datetime
-
     atualizado_em: datetime
 
     model_config = ConfigDict(
@@ -131,62 +111,41 @@ class ManutencaoResponse(BaseModel):
     )
 
 
+# =====================================================
 # OPERAÇÕES
-
+# =====================================================
 
 class OperacaoCreate(BaseModel):
     data: date
-
     turno: str
-
     veiculo_id: int | None = None
-
     motorista_id: int | None = None
-
     rota_id: str | None = None
-
     status: str
-
     observacao: str | None = None
-
     origem: str = "MANUAL"
 
 
 class OperacaoUpdate(BaseModel):
     turno: str | None = None
-
     veiculo_id: int | None = None
-
     motorista_id: int | None = None
-
     rota_id: str | None = None
-
     status: str | None = None
-
     observacao: str | None = None
 
 
 class OperacaoResponse(BaseModel):
     id: int
-
     data: date
-
     turno: str
-
     veiculo_id: int | None
-
     motorista_id: int | None
-
     rota_id: str | None
-
     status: str
-
     observacao: str | None
-
     origem: str
-
     criado_em: datetime
-
     atualizado_em: datetime
 
     model_config = ConfigDict(
@@ -194,49 +153,63 @@ class OperacaoResponse(BaseModel):
     )
 
 
+# =====================================================
 # HISTÓRICO DE VEÍCULO
-
+# =====================================================
 
 class VeiculoHistoricoResponse(BaseModel):
     veiculo: VeiculoResponse
-
     manutencoes: list[ManutencaoResponse]
-
     operacoes: list[OperacaoResponse]
 
 
+# =====================================================
 # HISTÓRICO DE MOTORISTA
-
+# =====================================================
 
 class MotoristaHistoricoResponse(BaseModel):
     motorista: MotoristaResponse
-
     operacoes: list[OperacaoResponse]
 
 
+# =====================================================
 # PANORAMA
-
+# =====================================================
 
 class PanoramaResponse(BaseModel):
     data: date
-
     turno: str | None = None
-
     total_veiculos: int
-
     veiculos_manutencao: int
-
     veiculos_operacao: int
-
     texto: str
 
+
+# =====================================================
 # COLETA AUTOMÁTICA
+# =====================================================
 
 class ColetaRegistro(BaseModel):
     placa: str
+
+    # Usado para preencher ou atualizar o cadastro
+    # automático do veículo.
+    tipo_veiculo: str | None = None
+
     motorista: str | None = None
     rota_id: str | None = None
+
+    # Status já traduzido para o padrão do Hawk:
+    # CARREGANDO, EM_ROTA, CONCLUIDA,
+    # RETORNANDO_ESTACAO ou AMBULANCIA.
     status: str
+
+    # Identificação operacional exibida depois do
+    # nome do motorista, por exemplo: D11_AM1.
+    cluster: str | None = None
+
+    # Informação complementar opcional. Não deve
+    # repetir status, ciclo ou tipo do veículo.
     observacao: str | None = None
 
 
@@ -258,3 +231,39 @@ class ColetaImportarResponse(BaseModel):
     atualizados: int
     ignorados: int
     pendencias: list[ColetaPendencia]
+
+
+# =====================================================
+# VEÍCULOS SEM REGISTRO NO TURNO
+# =====================================================
+
+class VeiculoSemRegistroResponse(BaseModel):
+    id: int
+    placa: str
+    tipo: str | None = None
+    categoria: str
+    observacao: str | None = None
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
+class ClassificarVeiculoAusenteRequest(BaseModel):
+    data: date
+    turno: str
+
+    # Valores aceitos:
+    # MANUTENCAO, FOLGA, IMPEDIDO, SEM_CARGA,
+    # OUTRO_SERVICE ou INDISPONIVEL_MOTORISTA.
+    classificacao: str
+
+    motivo: str | None = None
+    previsao_retorno: date | None = None
+
+
+class ClassificarVeiculoAusenteResponse(BaseModel):
+    tipo_registro: str
+    mensagem: str
+    operacao: OperacaoResponse | None = None
+    manutencao: ManutencaoResponse | None = None

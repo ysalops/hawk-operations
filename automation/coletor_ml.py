@@ -5,8 +5,9 @@ import traceback
 
 from datetime import date, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import Request, sync_playwright
 
 from importar_coleta import (
     enviar_coleta,
@@ -18,6 +19,34 @@ from normalizador import (
 )
 
 
+# CONFIGURAÇÕES
+
+URL_MONITORAMENTO = (
+    "https://envios.adminml.com/"
+    "logistics/monitoring-distribution"
+)
+
+TRECHO_URL_ROTAS = (
+    "get-routes-list"
+)
+
+TRANSPORTADORA_ESPERADA = (
+    "hawk transportes"
+)
+
+BASE_ESPERADA = (
+    "SSP17"
+)
+
+TEMPO_LIMITE_SEGUNDOS = (
+    1800
+)
+
+FUSO_HORARIO_OPERACAO = (
+    ZoneInfo("America/Sao_Paulo")
+)
+
+
 # CAMINHOS
 
 BASE_DIR = (
@@ -26,36 +55,30 @@ BASE_DIR = (
     .parent
 )
 
-
 PROFILE_DIR = (
     BASE_DIR
     / ".browser-profile"
 )
-
 
 CAPTURAS_DIR = (
     BASE_DIR
     / "capturas"
 )
 
-
 ARQUIVO_BRUTO = (
     BASE_DIR
     / "coleta_bruta_real.json"
 )
-
 
 ARQUIVO_NORMALIZADO = (
     BASE_DIR
     / "coleta_normalizada.json"
 )
 
-
 ARQUIVO_STATUS = (
     BASE_DIR
     / "coletor_status.json"
 )
-
 
 CAPTURAS_DIR.mkdir(
     parents=True,
@@ -72,46 +95,27 @@ def salvar_status(
 ):
 
     dados = {
-
-        "status":
-            status,
-
-        "mensagem":
-            mensagem,
-
-        "atualizado_em":
-            datetime.now().isoformat(
-                timespec="seconds"
-            ),
-
+        "status": status,
+        "mensagem": mensagem,
+        "atualizado_em": datetime.now().isoformat(
+            timespec="seconds"
+        ),
         **dados_extras,
-
     }
 
-
     arquivo_temporario = (
-
         ARQUIVO_STATUS
-        .with_suffix(
-            ".tmp"
-        )
-
+        .with_suffix(".tmp")
     )
 
-
     arquivo_temporario.write_text(
-
         json.dumps(
             dados,
             indent=4,
             ensure_ascii=False,
         ),
-
-        encoding=
-            "utf-8",
-
+        encoding="utf-8",
     )
-
 
     arquivo_temporario.replace(
         ARQUIVO_STATUS
@@ -125,27 +129,21 @@ def salvar_json(
     dados,
 ):
 
+    caminho.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     with caminho.open(
-
         "w",
-
-        encoding=
-            "utf-8",
-
+        encoding="utf-8",
     ) as arquivo:
 
         json.dump(
-
             dados,
-
             arquivo,
-
-            indent=
-                4,
-
-            ensure_ascii=
-                False,
-
+            indent=4,
+            ensure_ascii=False,
         )
 
 
@@ -159,133 +157,619 @@ def capturar_pagina(
         "%Y%m%d_%H%M%S"
     )
 
-
     arquivo_html = (
-
         CAPTURAS_DIR
-        /
-        f"pagina_{agora}.html"
-
+        / f"pagina_{agora}.html"
     )
-
 
     arquivo_texto = (
-
         CAPTURAS_DIR
-        /
-        f"texto_{agora}.txt"
-
+        / f"texto_{agora}.txt"
     )
-
 
     arquivo_imagem = (
-
         CAPTURAS_DIR
-        /
-        f"pagina_{agora}.png"
-
+        / f"pagina_{agora}.png"
     )
 
-
-    # HTML
-
-    arquivo_html.write_text(
-
-        pagina.content(),
-
-        encoding=
-            "utf-8",
-
-    )
-
-
-    # TEXTO VISÍVEL
-
-    texto = (
-
-        pagina
-        .locator(
-            "body"
+    try:
+        arquivo_html.write_text(
+            pagina.content(),
+            encoding="utf-8",
         )
-        .inner_text()
+    except Exception as error:
+        print(
+            "⚠️ Não foi possível salvar o HTML:",
+            error,
+        )
 
-    )
+    try:
+        texto = (
+            pagina
+            .locator("body")
+            .inner_text()
+        )
 
+        arquivo_texto.write_text(
+            texto,
+            encoding="utf-8",
+        )
+    except Exception as error:
+        print(
+            "⚠️ Não foi possível salvar o texto:",
+            error,
+        )
 
-    arquivo_texto.write_text(
-
-        texto,
-
-        encoding=
-            "utf-8",
-
-    )
-
-
-    # SCREENSHOT
-
-    pagina.screenshot(
-
-        path=
-            str(
+    try:
+        pagina.screenshot(
+            path=str(
                 arquivo_imagem
             ),
-
-        full_page=
-            True,
-
-    )
-
+            full_page=True,
+        )
+    except Exception as error:
+        print(
+            "⚠️ Não foi possível salvar a imagem:",
+            error,
+        )
 
     print()
-
     print(
         "📸 Diagnóstico da página salvo."
     )
-
     print(
-        f"HTML: {arquivo_html.name}"
-    )
-
-    print(
-        f"Texto: {arquivo_texto.name}"
-    )
-
-    print(
-        f"Imagem: {arquivo_imagem.name}"
+        f"Pasta: {CAPTURAS_DIR}"
     )
 
 
-# EXTRAIR REGISTROS DO SITE
+# ESTADO DA CAPTURA DE REDE
+
+def criar_estado_captura():
+
+    return {
+        "dados": None,
+        "url": None,
+        "capturado_em": None,
+        "erro": None,
+    }
+
+
+# IDENTIFICAR REQUISIÇÃO DE ROTAS
+
+def eh_requisicao_lista_rotas(
+    url,
+):
+
+    return (
+        TRECHO_URL_ROTAS
+        in
+        url.casefold()
+    )
+
+
+# CAPTURAR RESPOSTA GET-ROUTES-LIST
+
+def criar_manipulador_requisicao_finalizada(
+    estado_captura,
+):
+
+    def ao_finalizar_requisicao(
+        requisicao: Request,
+    ):
+
+        if not eh_requisicao_lista_rotas(
+            requisicao.url
+        ):
+            return
+
+        try:
+            resposta = (
+                requisicao.response()
+            )
+
+            if resposta is None:
+                return
+
+            if not resposta.ok:
+                estado_captura["erro"] = (
+                    "A API de rotas respondeu com "
+                    f"HTTP {resposta.status}."
+                )
+                return
+
+            dados = (
+                resposta.json()
+            )
+
+            if not isinstance(
+                dados,
+                dict,
+            ):
+                estado_captura["erro"] = (
+                    "A resposta de rotas não é um objeto JSON."
+                )
+                return
+
+            rotas = (
+                dados.get("routes")
+            )
+
+            if not isinstance(
+                rotas,
+                list,
+            ):
+                estado_captura["erro"] = (
+                    "O campo 'routes' não foi encontrado "
+                    "na resposta da API."
+                )
+                return
+
+            estado_captura["dados"] = (
+                dados
+            )
+
+            estado_captura["url"] = (
+                requisicao.url
+            )
+
+            estado_captura["capturado_em"] = (
+                datetime.now().isoformat(
+                    timespec="seconds"
+                )
+            )
+
+            estado_captura["erro"] = None
+
+            agora = datetime.now().strftime(
+                "%Y%m%d_%H%M%S"
+            )
+
+            arquivo_resposta = (
+                CAPTURAS_DIR
+                / f"get_routes_list_{agora}.json"
+            )
+
+            salvar_json(
+                arquivo_resposta,
+                dados,
+            )
+
+            print()
+            print(
+                "✅ Resposta get-routes-list capturada."
+            )
+            print(
+                f"📦 {len(rotas)} rota(s) recebida(s)."
+            )
+
+        except Exception as error:
+            estado_captura["erro"] = (
+                "Falha ao interpretar a resposta "
+                f"get-routes-list: {error}"
+            )
+
+            print()
+            print(
+                "⚠️ Falha ao ler get-routes-list:"
+            )
+            print(
+                str(error)
+            )
+
+    return ao_finalizar_requisicao
+
+
+# TRADUZIR STATUS DO LAST MILE
+
+def valor_verdadeiro(
+    valor,
+):
+
+    if isinstance(
+        valor,
+        bool,
+    ):
+        return valor
+
+    if isinstance(
+        valor,
+        (int, float),
+    ):
+        return valor > 0
+
+    texto = str(
+        valor
+        or
+        ""
+    ).strip().casefold()
+
+    return texto not in {
+        "",
+        "0",
+        "false",
+        "none",
+        "null",
+        "nao",
+        "não",
+    }
+
+
+def rota_tem_ambulancia(
+    rota,
+):
+
+    flags = (
+        rota.get("flags")
+        or
+        {}
+    )
+
+    return (
+        valor_verdadeiro(
+            rota.get(
+                "hasAmbulance"
+            )
+        )
+        or
+        valor_verdadeiro(
+            flags.get(
+                "hasAmbulance"
+            )
+        )
+    )
+
+
+def traduzir_status_rota(
+    rota,
+):
+
+    status_ml = str(
+        rota.get("status")
+        or
+        ""
+    ).strip().casefold()
+
+    substatus_ml = str(
+        rota.get("substatus")
+        or
+        ""
+    ).strip().casefold()
+
+    # A ambulância é o destaque operacional mais
+    # importante quando aparece na rota.
+    if rota_tem_ambulancia(
+        rota
+    ):
+        return "AMBULANCIA"
+
+    if status_ml in {
+        "close",
+        "closed",
+        "complete",
+        "completed",
+        "concluded",
+        "finished",
+    }:
+        return "CONCLUIDA"
+
+    if status_ml in {
+        "return_to_station",
+        "returning_to_station",
+        "returned_to_station",
+    }:
+        return "RETORNANDO_ESTACAO"
+
+    if status_ml in {
+        "active",
+        "in_progress",
+        "on_route",
+        "started",
+    }:
+        return "EM_ROTA"
+
+    if substatus_ml in {
+        "started",
+        "in_progress",
+        "on_route",
+    }:
+        return "EM_ROTA"
+
+    if status_ml in {
+        "loading",
+        "loaded",
+        "ready",
+        "ready_to_start",
+        "assigned",
+        "pending",
+        "created",
+    }:
+        return "CARREGANDO"
+
+    # Fallback seguro:
+    # se já houve primeiro movimento, consideramos
+    # que o veículo está em rota.
+    primeiro_movimento = (
+        rota.get(
+            "dateFirstMovement"
+        )
+    )
+
+    if isinstance(
+        primeiro_movimento,
+        (int, float),
+    ) and primeiro_movimento > 0:
+        return "EM_ROTA"
+
+    return "CARREGANDO"
+
+
+# EXTRAIR REGISTROS DA RESPOSTA
 
 def extrair_registros_da_pagina(
     pagina,
+    estado_captura,
+    data_operacao=None,
 ):
 
-    """
-    A extração real será configurada quando
-    analisarmos a página operacional.
+    dados = (
+        estado_captura.get("dados")
+    )
 
-    Esta função deverá retornar:
+    if not dados:
+        return []
 
-    [
-        {
-            "placa": "RUL7F50",
-            "motorista": "João Silva",
-            "rota": "123456789",
-            "status": "Carregando",
-            "observacao": None,
-        }
-    ]
-    """
+    rotas = (
+        dados.get("routes")
+        or
+        []
+    )
 
     registros = []
 
+    ignorados_transportadora = 0
+    ignorados_base = 0
+    ignorados_sem_placa = 0
+    ignorados_outra_data = 0
+    datas_encontradas = set()
+    contagem_status = {}
 
-    # =================================================
-    # A EXTRAÇÃO REAL ENTRARÁ AQUI
-    # =================================================
+    for rota in rotas:
 
+        if not isinstance(
+            rota,
+            dict,
+        ):
+            continue
+
+        init_date = (
+            rota.get("initDate")
+        )
+
+        data_rota = None
+
+        if isinstance(
+            init_date,
+            (int, float),
+        ) and init_date > 0:
+            data_rota = (
+                datetime.fromtimestamp(
+                    init_date,
+                    tz=FUSO_HORARIO_OPERACAO,
+                )
+                .date()
+                .isoformat()
+            )
+
+            datas_encontradas.add(
+                data_rota
+            )
+
+        if (
+            data_operacao
+            and
+            data_rota
+            and
+            data_rota
+            !=
+            data_operacao
+        ):
+            ignorados_outra_data += 1
+            continue
+
+        transportadora = str(
+            rota.get("carrier")
+            or
+            ""
+        ).strip()
+
+        base = str(
+            rota.get("serviceCenterId")
+            or
+            rota.get("facilityId")
+            or
+            ""
+        ).strip().upper()
+
+        if (
+            transportadora
+            and
+            transportadora.casefold()
+            !=
+            TRANSPORTADORA_ESPERADA
+        ):
+            ignorados_transportadora += 1
+            continue
+
+        if (
+            base
+            and
+            base
+            !=
+            BASE_ESPERADA
+        ):
+            ignorados_base += 1
+            continue
+
+        veiculo = (
+            rota.get("vehicle")
+            or
+            {}
+        )
+
+        motorista = (
+            rota.get("driver")
+            or
+            {}
+        )
+
+        placa = str(
+            veiculo.get("license")
+            or
+            ""
+        ).strip().upper()
+
+        if not placa:
+            ignorados_sem_placa += 1
+            continue
+
+        nome_motorista = str(
+            motorista.get("driverName")
+            or
+            ""
+        ).strip()
+
+        rota_id = str(
+            rota.get("id")
+            or
+            ""
+        ).strip()
+
+        cluster = str(
+            rota.get("cluster")
+            or
+            ""
+        ).strip()
+
+        tipo_veiculo = str(
+            veiculo.get("description")
+            or
+            rota.get(
+                "vehicleDescriptionForFilter"
+            )
+            or
+            ""
+        ).strip()
+
+        status_hawk = (
+            traduzir_status_rota(
+                rota
+            )
+        )
+
+        contagem_status[
+            status_hawk
+        ] = (
+            contagem_status.get(
+                status_hawk,
+                0,
+            )
+            +
+            1
+        )
+
+        registros.append({
+            "placa": placa,
+            "tipo_veiculo": (
+                tipo_veiculo
+                or
+                None
+            ),
+            "motorista": (
+                nome_motorista
+                or
+                None
+            ),
+            "rota_id": (
+                rota_id
+                or
+                None
+            ),
+            "status": status_hawk,
+            "cluster": (
+                cluster
+                or
+                None
+            ),
+            "observacao": None,
+        })
+
+    print()
+    print(
+        "🔎 Resultado do filtro da API:"
+    )
+    print(
+        f"• Registros válidos: {len(registros)}"
+    )
+
+    for (
+        status_nome,
+        quantidade,
+    ) in sorted(
+        contagem_status.items()
+    ):
+        print(
+            f"• {status_nome}: {quantidade}"
+        )
+
+    if ignorados_transportadora:
+        print(
+            "• Outra transportadora: "
+            f"{ignorados_transportadora}"
+        )
+
+    if ignorados_base:
+        print(
+            "• Outra base: "
+            f"{ignorados_base}"
+        )
+
+    if ignorados_sem_placa:
+        print(
+            "• Sem placa: "
+            f"{ignorados_sem_placa}"
+        )
+
+    if ignorados_outra_data:
+        print(
+            "• Outra data: "
+            f"{ignorados_outra_data}"
+        )
+
+    if (
+        data_operacao
+        and
+        not registros
+        and
+        ignorados_outra_data
+        and
+        ignorados_outra_data
+        ==
+        len(rotas)
+    ):
+        datas_texto = (
+            ", ".join(
+                sorted(datas_encontradas)
+            )
+            or
+            "não identificada"
+        )
+
+        raise ValueError(
+            "As rotas capturadas são da(s) data(s) "
+            f"{datas_texto}, mas o Hawk solicitou "
+            f"{data_operacao}. Ajuste a data no Hawk "
+            "ou abra a data correta no monitoramento."
+        )
 
     return registros
 
@@ -298,22 +782,41 @@ def obter_pagina_atual(
 ):
 
     paginas = [
-
         pagina
-
         for pagina in navegador.pages
-
         if not pagina.is_closed()
-
     ]
 
-
     if paginas:
-
         return paginas[-1]
 
-
     return pagina_padrao
+
+
+# SOLICITAR NOVA RESPOSTA DA PÁGINA
+
+def atualizar_pagina_monitoramento(
+    pagina,
+):
+
+    if pagina.is_closed():
+        return
+
+    try:
+        if (
+            "envios.adminml.com"
+            in
+            pagina.url.casefold()
+        ):
+            pagina.reload(
+                wait_until="domcontentloaded",
+                timeout=120000,
+            )
+    except Exception as error:
+        print(
+            "⚠️ Não foi possível atualizar a página:",
+            error,
+        )
 
 
 # AGUARDAR PÁGINA AUTOMATICAMENTE
@@ -321,103 +824,90 @@ def obter_pagina_atual(
 def aguardar_registros_automaticamente(
     navegador,
     pagina_inicial,
-    tempo_limite=1800,
+    estado_captura,
+    data_operacao,
+    tempo_limite=TEMPO_LIMITE_SEGUNDOS,
 ):
 
     print()
-
     print(
         "⏳ Aguardando a página operacional..."
     )
-
     print(
         "Faça o login normalmente e abra "
-        "a página com os dados da operação."
+        "a página de Monitoramento Last Mile."
     )
-
 
     salvar_status(
-
         "AGUARDANDO_PAGINA",
-
         (
-            "Navegador aberto. "
-            "Faça o login e acesse "
-            "a página operacional."
+            "Navegador aberto. Faça o login e "
+            "acesse a página de Monitoramento Last Mile."
         ),
-
     )
 
-
     inicio = time.time()
-
+    ultima_atualizacao = 0.0
 
     while (
-
         time.time()
         -
         inicio
-
         <
-
         tempo_limite
-
     ):
 
-        pagina = (
-
-            obter_pagina_atual(
-                navegador,
-                pagina_inicial,
-            )
-
+        pagina = obter_pagina_atual(
+            navegador,
+            pagina_inicial,
         )
 
-
         if pagina.is_closed():
-
             raise RuntimeError(
                 "O navegador foi fechado."
             )
 
-
-        try:
-
-            registros = (
-
-                extrair_registros_da_pagina(
-                    pagina
-                )
-
-            )
-
-
-            if registros:
-
-                return (
-                    pagina,
-                    registros,
-                )
-
-
-        except Exception:
-
-            # Durante login e navegação a página pode
-            # mudar. O coletor simplesmente tenta de novo.
-
-            pass
-
-
-        time.sleep(
-            3
+        registros = extrair_registros_da_pagina(
+            pagina,
+            estado_captura,
+            data_operacao=data_operacao,
         )
 
+        if registros:
+            return (
+                pagina,
+                registros,
+            )
+
+        agora = time.time()
+
+        if (
+            "monitoring-distribution"
+            in
+            pagina.url.casefold()
+            and
+            agora - ultima_atualizacao >= 20
+        ):
+            atualizar_pagina_monitoramento(
+                pagina
+            )
+            ultima_atualizacao = agora
+
+        time.sleep(2)
+
+    erro_captura = (
+        estado_captura.get("erro")
+    )
+
+    if erro_captura:
+        raise TimeoutError(
+            "Tempo limite atingido. Último erro: "
+            f"{erro_captura}"
+        )
 
     raise TimeoutError(
-
         "Tempo limite atingido aguardando "
-        "a página operacional."
-
+        "a resposta get-routes-list."
     )
 
 
@@ -430,19 +920,10 @@ def montar_coleta_bruta(
 ):
 
     return {
-
-        "data":
-            data_operacao,
-
-        "turno":
-            turno,
-
-        "origem":
-            "HAWK_COLLECTOR",
-
-        "registros":
-            registros,
-
+        "data": data_operacao,
+        "turno": turno,
+        "origem": "HAWK_COLLECTOR",
+        "registros": registros,
     }
 
 
@@ -453,210 +934,122 @@ def processar_coleta(
 ):
 
     salvar_status(
-
         "PROCESSANDO",
-
         "Processando dados coletados.",
-
     )
-
-
-    # SALVAR DADOS BRUTOS
 
     salvar_json(
         ARQUIVO_BRUTO,
         coleta_bruta,
     )
 
-
     print()
-
     print(
         "💾 Coleta bruta salva."
     )
 
-
-    # NORMALIZAR
-
-    resultado = (
-
-        normalizar_coleta(
-            coleta_bruta
-        )
-
+    resultado = normalizar_coleta(
+        coleta_bruta
     )
-
 
     coleta_normalizada = (
-
-        resultado[
-            "coleta"
-        ]
-
+        resultado["coleta"]
     )
-
 
     pendencias = (
-
-        resultado[
-            "pendencias"
-        ]
-
+        resultado["pendencias"]
     )
-
-
-    # SALVAR NORMALIZADO
 
     salvar_json(
-
         ARQUIVO_NORMALIZADO,
-
         coleta_normalizada,
-
     )
-
 
     print(
         "💾 Coleta normalizada salva."
     )
 
-
-    # MOSTRAR PENDÊNCIAS
-
     if pendencias:
-
         print()
-
         print(
             "⚠️ PENDÊNCIAS DE NORMALIZAÇÃO"
         )
 
-
         for pendencia in pendencias:
-
             print(
-
                 "• "
-
                 +
-
                 pendencia.get(
                     "motivo",
                     "Pendência desconhecida.",
                 )
-
             )
 
-
     registros = (
-
         coleta_normalizada
-        .get(
-            "registros",
-            []
-        )
-
+        .get("registros", [])
     )
 
-
     if not registros:
-
         salvar_status(
-
             "SEM_REGISTROS",
-
             "Nenhum registro válido foi encontrado.",
-
-            pendencias=
-                pendencias,
-
+            pendencias=pendencias,
         )
 
-
         print()
-
         print(
             "⚠️ Nenhum registro válido "
             "para enviar ao Hawk."
         )
 
-
         return None
 
-
-    # ENVIAR AO HAWK
-
     salvar_status(
-
         "ENVIANDO",
-
         (
             f"Enviando {len(registros)} "
             "registro(s) para o Hawk."
         ),
-
     )
 
-
     print()
-
     print(
         "📡 Enviando dados para o Hawk..."
     )
 
-
-    resultado_importacao = (
-
-        enviar_coleta(
-            coleta_normalizada
-        )
-
+    resultado_importacao = enviar_coleta(
+        coleta_normalizada
     )
-
 
     exibir_resultado(
         resultado_importacao
     )
 
-
     salvar_status(
-
         "CONCLUIDO",
-
         "Sincronização concluída com sucesso.",
-
-        recebidos=
-            resultado_importacao.get(
-                "recebidos",
-                0,
-            ),
-
-        importados=
-            resultado_importacao.get(
-                "importados",
-                0,
-            ),
-
-        atualizados=
-            resultado_importacao.get(
-                "atualizados",
-                0,
-            ),
-
-        ignorados=
-            resultado_importacao.get(
-                "ignorados",
-                0,
-            ),
-
-        pendencias=
-            resultado_importacao.get(
-                "pendencias",
-                [],
-            ),
-
+        recebidos=resultado_importacao.get(
+            "recebidos",
+            0,
+        ),
+        importados=resultado_importacao.get(
+            "importados",
+            0,
+        ),
+        atualizados=resultado_importacao.get(
+            "atualizados",
+            0,
+        ),
+        ignorados=resultado_importacao.get(
+            "ignorados",
+            0,
+        ),
+        pendencias=resultado_importacao.get(
+            "pendencias",
+            [],
+        ),
     )
-
 
     return resultado_importacao
 
@@ -666,101 +1059,80 @@ def processar_coleta(
 def executar_modo_manual(
     navegador,
     pagina,
+    estado_captura,
     turno,
     data_operacao,
 ):
 
     print()
-
     print(
-        "1. Acesse o sistema normalmente."
+        "1. Faça o login normalmente."
     )
-
     print(
-        "2. Faça o login com Okta/MFA."
+        "2. Abra Monitoramento Last Mile."
     )
-
     print(
-        "3. Abra a tela operacional."
+        "3. Aguarde a lista de rotas aparecer."
     )
-
     print()
 
-
     input(
-
-        "Quando estiver na página correta, "
+        "Quando a lista estiver carregada, "
         "pressione ENTER..."
-
     )
 
+    pagina = obter_pagina_atual(
+        navegador,
+        pagina,
+    )
 
-    pagina = (
-
-        obter_pagina_atual(
-            navegador,
-            pagina,
+    if not estado_captura.get("dados"):
+        atualizar_pagina_monitoramento(
+            pagina
         )
 
-    )
+        limite = time.time() + 60
 
+        while (
+            time.time()
+            <
+            limite
+            and
+            not estado_captura.get("dados")
+        ):
+            time.sleep(1)
 
     capturar_pagina(
         pagina
     )
 
-
     print()
-
     print(
         "🔎 Extraindo registros..."
     )
 
-
-    registros = (
-
-        extrair_registros_da_pagina(
-            pagina
-        )
-
+    registros = extrair_registros_da_pagina(
+        pagina,
+        estado_captura,
+        data_operacao=data_operacao,
     )
-
 
     print(
-
         f"{len(registros)} "
         "registro(s) encontrado(s)."
-
     )
-
 
     if not turno:
-
         turno = input(
-
             "Informe o turno "
             "(Manhã, Tarde ou Noite): "
-
         ).strip()
 
-
-    coleta_bruta = (
-
-        montar_coleta_bruta(
-
-            registros=
-                registros,
-
-            turno=
-                turno,
-
-            data_operacao=
-                data_operacao,
-
-        )
-
+    coleta_bruta = montar_coleta_bruta(
+        registros=registros,
+        turno=turno,
+        data_operacao=data_operacao,
     )
-
 
     processar_coleta(
         coleta_bruta
@@ -772,76 +1144,48 @@ def executar_modo_manual(
 def executar_modo_automatico(
     navegador,
     pagina,
+    estado_captura,
     turno,
     data_operacao,
 ):
 
     print()
-
     print(
         "🤖 Modo automático ativado."
     )
 
-
     pagina, registros = (
-
         aguardar_registros_automaticamente(
-
-            navegador=
-                navegador,
-
-            pagina_inicial=
-                pagina,
-
+            navegador=navegador,
+            pagina_inicial=pagina,
+            estado_captura=estado_captura,
+            data_operacao=data_operacao,
         )
-
     )
 
-
     salvar_status(
-
         "COLETANDO",
-
         (
             f"{len(registros)} "
             "registro(s) encontrado(s)."
         ),
-
     )
-
 
     print()
-
     print(
-
         f"✅ {len(registros)} "
         "registro(s) encontrado(s)."
-
     )
-
 
     capturar_pagina(
         pagina
     )
 
-
-    coleta_bruta = (
-
-        montar_coleta_bruta(
-
-            registros=
-                registros,
-
-            turno=
-                turno,
-
-            data_operacao=
-                data_operacao,
-
-        )
-
+    coleta_bruta = montar_coleta_bruta(
+        registros=registros,
+        turno=turno,
+        data_operacao=data_operacao,
     )
-
 
     processar_coleta(
         coleta_bruta
@@ -857,228 +1201,162 @@ def executar(
 ):
 
     print()
-
     print(
         "========================================"
     )
-
     print(
         " HAWK COLLECTOR"
     )
-
     print(
         "========================================"
     )
-
     print()
 
-
     if not data_operacao:
-
         data_operacao = (
             date.today()
             .isoformat()
         )
 
-
     if automatico and not turno:
-
         salvar_status(
-
             "ERRO",
-
             (
                 "O turno precisa ser informado "
                 "no modo automático."
             ),
-
         )
-
 
         raise ValueError(
-
             "Informe o turno para executar "
             "o coletor automaticamente."
-
         )
 
-
     salvar_status(
-
         "INICIANDO",
-
         "Iniciando o coletor.",
-
     )
-
 
     navegador = None
 
-
     try:
-
         with sync_playwright() as playwright:
 
             print(
                 "🌐 Abrindo navegador..."
             )
 
-
             navegador = (
-
                 playwright
                 .chromium
                 .launch_persistent_context(
-
-                    user_data_dir=
-                        str(
-                            PROFILE_DIR
-                        ),
-
-                    headless=
-                        False,
-
+                    user_data_dir=str(
+                        PROFILE_DIR
+                    ),
+                    headless=False,
                     viewport={
-
-                        "width":
-                            1440,
-
-                        "height":
-                            900,
-
+                        "width": 1440,
+                        "height": 900,
                     },
-
                 )
-
             )
 
+            estado_captura = (
+                criar_estado_captura()
+            )
+
+            navegador.on(
+                "requestfinished",
+                criar_manipulador_requisicao_finalizada(
+                    estado_captura
+                ),
+            )
 
             pagina = (
-
                 navegador.pages[0]
-
                 if navegador.pages
-
                 else navegador.new_page()
-
             )
 
-
-            # Página inicial provisória.
-            # Depois colocaremos o endereço real.
-
             if (
-
                 pagina.url
                 ==
                 "about:blank"
-
             ):
-
                 pagina.goto(
-
-                    "https://www.google.com"
-
+                    URL_MONITORAMENTO,
+                    wait_until="domcontentloaded",
+                    timeout=120000,
                 )
 
+            elif (
+                "envios.adminml.com"
+                not in
+                pagina.url.casefold()
+            ):
+                pagina.goto(
+                    URL_MONITORAMENTO,
+                    wait_until="domcontentloaded",
+                    timeout=120000,
+                )
+
+            else:
+                atualizar_pagina_monitoramento(
+                    pagina
+                )
 
             print()
-
             print(
                 "✅ Navegador aberto."
             )
 
-
             if automatico:
-
                 executar_modo_automatico(
-
-                    navegador=
-                        navegador,
-
-                    pagina=
-                        pagina,
-
-                    turno=
-                        turno,
-
-                    data_operacao=
-                        data_operacao,
-
+                    navegador=navegador,
+                    pagina=pagina,
+                    estado_captura=estado_captura,
+                    turno=turno,
+                    data_operacao=data_operacao,
                 )
-
 
             else:
-
                 executar_modo_manual(
-
-                    navegador=
-                        navegador,
-
-                    pagina=
-                        pagina,
-
-                    turno=
-                        turno,
-
-                    data_operacao=
-                        data_operacao,
-
+                    navegador=navegador,
+                    pagina=pagina,
+                    estado_captura=estado_captura,
+                    turno=turno,
+                    data_operacao=data_operacao,
                 )
-
 
                 print()
-
                 input(
-
                     "Pressione ENTER para "
                     "fechar o navegador..."
-
                 )
 
-
     except Exception as error:
-
         print()
-
         print(
             "❌ Erro no coletor:"
         )
-
         print(
-            str(
-                error
-            )
+            str(error)
         )
-
 
         traceback.print_exc()
 
-
         salvar_status(
-
             "ERRO",
-
-            str(
-                error
-            ),
-
+            str(error),
         )
-
 
         raise
 
-
     finally:
-
         if navegador:
-
             try:
-
                 navegador.close()
-
             except Exception:
-
                 pass
 
 
@@ -1087,51 +1365,31 @@ def executar(
 def obter_argumentos():
 
     parser = argparse.ArgumentParser(
-
-        description=
+        description=(
             "Hawk Operations Collector"
-
+        )
     )
 
-
     parser.add_argument(
-
         "--automatico",
-
-        action=
-            "store_true",
-
-        help=
-            "Executa sem depender de comandos no terminal.",
-
+        action="store_true",
+        help=(
+            "Executa sem depender de comandos "
+            "no terminal."
+        ),
     )
 
-
     parser.add_argument(
-
         "--turno",
-
-        type=
-            str,
-
-        default=
-            None,
-
+        type=str,
+        default=None,
     )
-
 
     parser.add_argument(
-
         "--data",
-
-        type=
-            str,
-
-        default=
-            None,
-
+        type=str,
+        default=None,
     )
-
 
     return parser.parse_args()
 
@@ -1140,20 +1398,10 @@ def obter_argumentos():
 
 if __name__ == "__main__":
 
-    argumentos = (
-        obter_argumentos()
-    )
-
+    argumentos = obter_argumentos()
 
     executar(
-
-        automatico=
-            argumentos.automatico,
-
-        turno=
-            argumentos.turno,
-
-        data_operacao=
-            argumentos.data,
-
+        automatico=argumentos.automatico,
+        turno=argumentos.turno,
+        data_operacao=argumentos.data,
     )

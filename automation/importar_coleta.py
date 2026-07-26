@@ -1,5 +1,7 @@
 import json
+import os
 import sys
+
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -7,7 +9,11 @@ from urllib.request import Request, urlopen
 
 # CONFIGURAÇÕES
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = (
+    Path(__file__)
+    .resolve()
+    .parent
+)
 
 ARQUIVO_COLETA = (
     BASE_DIR
@@ -15,115 +21,140 @@ ARQUIVO_COLETA = (
 )
 
 URL_IMPORTACAO = (
-    "http://127.0.0.1:8000/coleta/importar"
+    os.getenv(
+        "HAWK_IMPORT_URL",
+        "http://127.0.0.1:8000/coleta/importar",
+    )
 )
 
+TEMPO_LIMITE_SEGUNDOS = 30
 
-# CARREGAR ARQUIVO
 
-def carregar_coleta():
+# CARREGAR ARQUIVO DE TESTE
 
-    if not ARQUIVO_COLETA.exists():
+def carregar_coleta(
+    caminho=ARQUIVO_COLETA,
+):
+    caminho = Path(caminho)
 
-        print()
-        print(
-            "❌ Arquivo de coleta não encontrado:"
+    if not caminho.exists():
+        raise FileNotFoundError(
+            "Arquivo de coleta não encontrado: "
+            f"{caminho}"
         )
-
-        print(
-            ARQUIVO_COLETA
-        )
-
-        print()
-
-        sys.exit(
-            1
-        )
-
 
     try:
-
-        with ARQUIVO_COLETA.open(
+        with caminho.open(
             "r",
             encoding="utf-8",
         ) as arquivo:
-
-            return json.load(
+            dados = json.load(
                 arquivo
             )
 
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            "O arquivo JSON possui um erro. "
+            f"Linha {error.lineno}, "
+            f"coluna {error.colno}: "
+            f"{error.msg}"
+        ) from error
+
+    if not isinstance(
+        dados,
+        dict,
+    ):
+        raise ValueError(
+            "A coleta precisa ser um objeto JSON."
+        )
+
+    return dados
+
+
+# LER RESPOSTA JSON
+
+def interpretar_resposta_json(
+    conteudo,
+    contexto,
+):
+    if not conteudo:
+        raise RuntimeError(
+            f"{contexto} retornou uma resposta vazia."
+        )
+
+    try:
+        dados = json.loads(
+            conteudo
+        )
 
     except json.JSONDecodeError as error:
+        raise RuntimeError(
+            f"{contexto} retornou uma resposta "
+            "que não é um JSON válido."
+        ) from error
 
-        print()
-        print(
-            "❌ O arquivo JSON possui um erro."
+    if not isinstance(
+        dados,
+        dict,
+    ):
+        raise RuntimeError(
+            f"{contexto} retornou um formato inesperado."
         )
 
-        print(
-            f"Linha: {error.lineno}"
-        )
-
-        print(
-            f"Coluna: {error.colno}"
-        )
-
-        print(
-            f"Detalhe: {error.msg}"
-        )
-
-        print()
-
-        sys.exit(
-            1
-        )
+    return dados
 
 
 # ENVIAR COLETA
 
 def enviar_coleta(
-    dados
+    dados,
 ):
+    if not isinstance(
+        dados,
+        dict,
+    ):
+        raise ValueError(
+            "Os dados da coleta precisam ser "
+            "um objeto JSON."
+        )
 
-    corpo = (
-        json.dumps(
-            dados
-        )
-        .encode(
-            "utf-8"
-        )
+    registros = dados.get(
+        "registros"
     )
 
+    if not isinstance(
+        registros,
+        list,
+    ):
+        raise ValueError(
+            "O campo 'registros' precisa ser uma lista."
+        )
+
+    corpo = json.dumps(
+        dados,
+        ensure_ascii=False,
+    ).encode(
+        "utf-8"
+    )
 
     requisicao = Request(
-
         URL_IMPORTACAO,
-
-        data=
-            corpo,
-
+        data=corpo,
         headers={
-
-            "Content-Type":
-                "application/json",
-
-            "Accept":
-                "application/json",
-
+            "Content-Type": (
+                "application/json; charset=utf-8"
+            ),
+            "Accept": "application/json",
+            "User-Agent": "Hawk-Collector/1.0",
         },
-
-        method=
-            "POST",
-
+        method="POST",
     )
 
-
     try:
-
         with urlopen(
-            requisicao
+            requisicao,
+            timeout=TEMPO_LIMITE_SEGUNDOS,
         ) as resposta:
-
             conteudo = (
                 resposta
                 .read()
@@ -132,150 +163,163 @@ def enviar_coleta(
                 )
             )
 
-
-            return json.loads(
-                conteudo
+            return interpretar_resposta_json(
+                conteudo=conteudo,
+                contexto="O Hawk",
             )
-
 
     except HTTPError as error:
-
-        corpo_erro = (
-            error
-            .read()
-            .decode(
-                "utf-8"
-            )
-        )
-
-
-        print()
-        print(
-            "❌ O Hawk recusou a importação."
-        )
-
-        print(
-            f"Status HTTP: {error.code}"
-        )
-
-        print()
-
-
         try:
-
-            detalhe = json.loads(
-                corpo_erro
-            )
-
-            print(
-                json.dumps(
-                    detalhe,
-                    indent=2,
-                    ensure_ascii=False,
+            corpo_erro = (
+                error
+                .read()
+                .decode(
+                    "utf-8"
                 )
             )
 
+        except Exception:
+            corpo_erro = ""
 
-        except json.JSONDecodeError:
-
-            print(
-                corpo_erro
-            )
-
-
-        sys.exit(
-            1
+        detalhe = (
+            f"Status HTTP {error.code}."
         )
 
+        if corpo_erro:
+            try:
+                dados_erro = json.loads(
+                    corpo_erro
+                )
 
-    except URLError:
+                detalhe_api = (
+                    dados_erro.get(
+                        "detail"
+                    )
+                    if isinstance(
+                        dados_erro,
+                        dict,
+                    )
+                    else None
+                )
 
-        print()
-        print(
-            "❌ Não foi possível conectar "
-            "ao Hawk Operations."
+                if detalhe_api:
+                    detalhe += (
+                        f" Detalhe: {detalhe_api}"
+                    )
+
+                else:
+                    detalhe += (
+                        " Resposta: "
+                        f"{corpo_erro}"
+                    )
+
+            except json.JSONDecodeError:
+                detalhe += (
+                    " Resposta: "
+                    f"{corpo_erro}"
+                )
+
+        raise RuntimeError(
+            "O Hawk recusou a importação. "
+            f"{detalhe}"
+        ) from error
+
+    except URLError as error:
+        motivo = getattr(
+            error,
+            "reason",
+            error,
         )
 
-        print()
-        print(
-            "Confirme se o servidor está rodando:"
-        )
+        raise RuntimeError(
+            "Não foi possível conectar ao "
+            "Hawk Operations em "
+            f"{URL_IMPORTACAO}. "
+            "Confirme se o servidor está rodando com "
+            "'python -m uvicorn backend.main:app "
+            f"--reload'. Motivo: {motivo}"
+        ) from error
 
-        print()
-        print(
-            "uvicorn backend.main:app --reload"
-        )
-
-        print()
-
-        sys.exit(
-            1
-        )
+    except TimeoutError as error:
+        raise RuntimeError(
+            "O Hawk demorou mais de "
+            f"{TEMPO_LIMITE_SEGUNDOS} segundos "
+            "para responder."
+        ) from error
 
 
 # EXIBIR RESULTADO
 
 def exibir_resultado(
-    resultado
+    resultado,
 ):
+    if not isinstance(
+        resultado,
+        dict,
+    ):
+        raise ValueError(
+            "O resultado da importação possui "
+            "um formato inválido."
+        )
 
     print()
     print(
         "========================================"
     )
-
     print(
         " HAWK COLLECTOR - IMPORTAÇÃO"
     )
-
     print(
         "========================================"
     )
-
     print()
 
     print(
-        f"📥 Recebidos: "
+        "📥 Recebidos: "
         f"{resultado.get('recebidos', 0)}"
     )
 
     print(
-        f"✅ Importados: "
+        "✅ Importados: "
         f"{resultado.get('importados', 0)}"
     )
 
     print(
-        f"🔄 Atualizados: "
+        "🔄 Atualizados: "
         f"{resultado.get('atualizados', 0)}"
     )
 
     print(
-        f"⚠️ Ignorados: "
+        "⚠️ Ignorados: "
         f"{resultado.get('ignorados', 0)}"
     )
 
-
-    pendencias = (
-        resultado.get(
-            "pendencias",
-            []
-        )
+    pendencias = resultado.get(
+        "pendencias",
+        [],
     )
 
+    if not isinstance(
+        pendencias,
+        list,
+    ):
+        pendencias = []
 
     if pendencias:
-
         print()
         print(
             "PENDÊNCIAS"
         )
-
         print(
             "----------------------------------------"
         )
 
-
         for pendencia in pendencias:
+            if not isinstance(
+                pendencia,
+                dict,
+            ):
+                continue
 
             placa = (
                 pendencia.get(
@@ -285,7 +329,6 @@ def exibir_resultado(
                 "Sem placa"
             )
 
-
             motivo = (
                 pendencia.get(
                     "motivo"
@@ -294,75 +337,75 @@ def exibir_resultado(
                 "Motivo não informado"
             )
 
-
             print(
                 f"• {placa}: {motivo}"
             )
 
-
     else:
-
         print()
         print(
             "🎉 Nenhuma pendência encontrada."
         )
 
-
     print()
     print(
         "Importação concluída."
     )
-
     print()
 
 
-# EXECUÇÃO
+# EXECUÇÃO MANUAL DE TESTE
 
 def executar():
-
     print()
     print(
         "Carregando arquivo de coleta..."
     )
 
-
-    dados = (
-        carregar_coleta()
-    )
-
+    dados = carregar_coleta()
 
     quantidade = len(
-
         dados.get(
             "registros",
-            []
+            [],
         )
-
     )
-
 
     print(
         f"{quantidade} registro(s) encontrado(s)."
     )
 
-
     print(
         "Enviando dados para o Hawk..."
     )
 
-
-    resultado = (
-        enviar_coleta(
-            dados
-        )
+    resultado = enviar_coleta(
+        dados
     )
-
 
     exibir_resultado(
         resultado
     )
 
 
-if __name__ == "__main__":
+# INICIALIZAÇÃO
 
-    executar()
+if __name__ == "__main__":
+    try:
+        executar()
+
+    except Exception as error:
+        print()
+        print(
+            "❌ Erro durante a importação:"
+        )
+        print(
+            str(
+                error
+            )
+        )
+        print()
+
+        sys.exit(
+            1
+        )

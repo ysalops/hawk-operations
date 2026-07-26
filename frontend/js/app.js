@@ -577,6 +577,93 @@ let syncStatusInterval =
 let ultimaSincronizacaoConcluida =
     null;
 
+// ELEMENTOS - VEÍCULOS SEM CLASSIFICAÇÃO
+
+const unclassifiedVehiclesPanel =
+    document.getElementById(
+        "unclassifiedVehiclesPanel"
+    );
+
+const unclassifiedVehiclesTotal =
+    document.getElementById(
+        "unclassifiedVehiclesTotal"
+    );
+
+const unclassifiedVehiclesMessage =
+    document.getElementById(
+        "unclassifiedVehiclesMessage"
+    );
+
+const unclassifiedVehiclesTable =
+    document.getElementById(
+        "unclassifiedVehiclesTable"
+    );
+
+const classifyVehicleModal =
+    document.getElementById(
+        "classifyVehicleModal"
+    );
+
+const classifyVehicleForm =
+    document.getElementById(
+        "classifyVehicleForm"
+    );
+
+const classifyVehicleId =
+    document.getElementById(
+        "classifyVehicleId"
+    );
+
+const classifyVehiclePlate =
+    document.getElementById(
+        "classifyVehiclePlate"
+    );
+
+const classifyVehicleMeta =
+    document.getElementById(
+        "classifyVehicleMeta"
+    );
+
+const classifyVehicleType =
+    document.getElementById(
+        "classifyVehicleType"
+    );
+
+const classifyVehicleReason =
+    document.getElementById(
+        "classifyVehicleReason"
+    );
+
+const classifyVehicleReturnDateGroup =
+    document.getElementById(
+        "classifyVehicleReturnDateGroup"
+    );
+
+const classifyVehicleReturnDate =
+    document.getElementById(
+        "classifyVehicleReturnDate"
+    );
+
+const classifyVehicleMessage =
+    document.getElementById(
+        "classifyVehicleMessage"
+    );
+
+const closeClassifyVehicleModal =
+    document.getElementById(
+        "closeClassifyVehicleModal"
+    );
+
+const cancelClassifyVehicleModal =
+    document.getElementById(
+        "cancelClassifyVehicleModal"
+    );
+
+const saveClassifyVehicleButton =
+    document.getElementById(
+        "saveClassifyVehicleButton"
+    );
+
 // ELEMENTOS - PANORAMA
 
 const panoramaDate =
@@ -618,6 +705,8 @@ let motoristas = [];
 
 let operacoes = [];
 
+let veiculosSemClassificacao = [];
+
 // INSTÂNCIAS DOS GRÁFICOS
 
 let dashboardFleetChartInstance =
@@ -643,8 +732,28 @@ let dashboardTopMaintenanceVehiclesChartInstance =
 const statusOperacao = {
 
     CARREGANDO: {
-        texto: "✅ Carregando",
+        texto: "📦 Carregando",
+        classe: "badge-operation"
+    },
+
+    EM_ROTA: {
+        texto: "🚚 Em rota",
+        classe: "badge-operation"
+    },
+
+    CONCLUIDA: {
+        texto: "✅ Concluída",
         classe: "badge-active"
+    },
+
+    RETORNANDO_ESTACAO: {
+        texto: "↩️ Retornando à estação",
+        classe: "badge-maintenance"
+    },
+
+    AMBULANCIA: {
+        texto: "🚑 Ambulância entre paradas",
+        classe: "badge-inactive"
     },
 
     RESERVA_CARREGANDO: {
@@ -949,6 +1058,8 @@ async function carregarDados() {
 
         aplicarFiltrosOperacao();
 
+        await carregarVeiculosSemClassificacao();
+
     } catch (error) {
 
         console.error(
@@ -998,7 +1109,6 @@ function atualizarIndicadores() {
     }
 
     if (veiculosManutencao) {
-
         veiculosManutencao.textContent =
             manutencoesAtivas.length;
 
@@ -1998,7 +2108,6 @@ function aplicarFiltrosFrota() {
                     obterStatusVeiculo(
                         veiculo
                     );
-
                 const correspondeBusca =
 
                     !busca
@@ -2997,8 +3106,7 @@ function atualizarSelectsOperacao() {
                 veiculo.ativo
                 &&
                 !buscarManutencaoAtiva(
-                    veiculo.id
-                )
+                    veiculo.id                )
 
         );
 
@@ -3296,6 +3404,768 @@ function renderizarOperacoes(
 
 }
 
+// VEÍCULOS SEM CLASSIFICAÇÃO
+
+function mostrarMensagemVeiculosSemClassificacao(
+    mensagem,
+    tipo = ""
+) {
+
+    if (!unclassifiedVehiclesMessage) {
+
+        return;
+
+    }
+
+    unclassifiedVehiclesMessage.textContent =
+        mensagem;
+
+    unclassifiedVehiclesMessage.className =
+        [
+            "form-message",
+            "unclassified-vehicles-message",
+            tipo
+        ]
+            .filter(
+                Boolean
+            )
+            .join(
+                " "
+            );
+
+}
+
+function renderizarVeiculosSemClassificacao(
+    lista
+) {
+
+    if (
+        !unclassifiedVehiclesTable
+        ||
+        !unclassifiedVehiclesTotal
+    ) {
+
+        return;
+
+    }
+
+    unclassifiedVehiclesTotal.textContent =
+        lista.length;
+
+    unclassifiedVehiclesTable.innerHTML =
+        "";
+
+    if (
+        lista.length
+        ===
+        0
+    ) {
+
+        unclassifiedVehiclesTable.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="5"
+                    class="loading"
+                >
+                    Nenhum veículo pendente para este turno.
+                </td>
+
+            </tr>
+
+        `;
+
+        mostrarMensagemVeiculosSemClassificacao(
+
+            "Todos os veículos ativos já possuem classificação neste turno.",
+
+            "success"
+
+        );
+
+        return;
+
+    }
+
+    mostrarMensagemVeiculosSemClassificacao(
+
+        (
+            `${lista.length} veículo(s) ainda precisam `
+            +
+            "ser classificados neste turno."
+        ),
+
+        "warning"
+
+    );
+
+    lista.forEach(
+
+        veiculo => {
+
+            const row =
+                document.createElement(
+                    "tr"
+                );
+
+            row.innerHTML = `
+
+                <td class="plate">
+
+                    ${escaparHTML(
+                        veiculo.placa
+                    )}
+
+                </td>
+
+                <td>
+
+                    ${escaparHTML(
+                        veiculo.tipo
+                        ||
+                        "Não informado"
+                    )}
+
+                </td>
+
+                <td>
+
+                    ${escaparHTML(
+                        veiculo.categoria
+                        ||
+                        "Não informada"
+                    )}
+
+                </td>
+
+                <td>
+
+                    <span
+                        class="badge badge-maintenance"
+                    >
+                        ⚠️ Pendente
+                    </span>
+
+                </td>
+
+                <td>
+
+                    <button
+                        class="
+                            action-button
+                            classify-unclassified-vehicle
+                        "
+                        data-vehicle-id="${veiculo.id}"
+                        type="button"
+                    >
+                        Classificar
+                    </button>
+
+                </td>
+
+            `;
+
+            unclassifiedVehiclesTable.appendChild(
+                row
+            );
+
+        }
+
+    );
+
+}
+
+function mostrarEstadoInicialVeiculosSemClassificacao() {
+
+    veiculosSemClassificacao =
+        [];
+
+    if (unclassifiedVehiclesTotal) {
+
+        unclassifiedVehiclesTotal.textContent =
+            "0";
+
+    }
+
+    if (unclassifiedVehiclesTable) {
+
+        unclassifiedVehiclesTable.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="5"
+                    class="loading"
+                >
+                    Selecione uma data e um turno específico.
+                </td>
+
+            </tr>
+
+        `;
+
+    }
+
+    mostrarMensagemVeiculosSemClassificacao(
+
+        "Selecione uma data e Manhã, Tarde ou Noite para consultar."
+
+    );
+
+}
+
+async function carregarVeiculosSemClassificacao() {
+
+    if (
+        !unclassifiedVehiclesPanel
+        ||
+        !unclassifiedVehiclesTable
+    ) {
+
+        return;
+
+    }
+
+    const dataOperacao =
+
+        operationFilterDate
+        ?.value
+
+        ||
+
+        "";
+
+    const turno =
+
+        operationFilterShift
+        ?.value
+
+        ||
+
+        "";
+
+    if (
+        !dataOperacao
+        ||
+        !turno
+    ) {
+
+        mostrarEstadoInicialVeiculosSemClassificacao();
+
+        return;
+
+    }
+
+    unclassifiedVehiclesTable.innerHTML = `
+
+        <tr>
+
+            <td
+                colspan="5"
+                class="loading"
+            >
+                Consultando veículos sem classificação...
+            </td>
+
+        </tr>
+
+    `;
+
+    mostrarMensagemVeiculosSemClassificacao(
+
+        "Consultando a situação da frota..."
+
+    );
+
+    try {
+
+        const parametros =
+            new URLSearchParams({
+
+                data_operacao:
+                    dataOperacao,
+
+                turno:
+                    turno
+
+            });
+
+        const response =
+            await fetch(
+
+                (
+                    "/coleta/veiculos-sem-registro?"
+                    +
+                    parametros.toString()
+                )
+
+            );
+
+        const dados =
+            await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+
+                dados.detail
+
+                ||
+
+                "Não foi possível consultar os veículos pendentes."
+
+            );
+
+        }
+
+        veiculosSemClassificacao =
+            Array.isArray(
+                dados
+            )
+            ?
+            dados
+            :
+            [];
+
+        renderizarVeiculosSemClassificacao(
+            veiculosSemClassificacao
+        );
+
+    } catch (error) {
+
+        veiculosSemClassificacao =
+            [];
+
+        if (unclassifiedVehiclesTotal) {
+
+            unclassifiedVehiclesTotal.textContent =
+                "0";
+
+        }
+
+        unclassifiedVehiclesTable.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="5"
+                    class="loading"
+                >
+                    Não foi possível carregar os veículos pendentes.
+                </td>
+
+            </tr>
+
+        `;
+
+        mostrarMensagemVeiculosSemClassificacao(
+
+            error.message,
+
+            "error"
+
+        );
+
+    }
+
+}
+
+function atualizarCamposClassificacao() {
+
+    if (
+        !classifyVehicleType
+        ||
+        !classifyVehicleReturnDateGroup
+        ||
+        !classifyVehicleReason
+    ) {
+
+        return;
+
+    }
+
+    const manutencao =
+        classifyVehicleType.value
+        ===
+        "MANUTENCAO";
+
+    classifyVehicleReturnDateGroup.hidden =
+        !manutencao;
+
+    classifyVehicleReason.required =
+        manutencao;
+
+    classifyVehicleReason.placeholder =
+
+        manutencao
+
+        ?
+
+        "Informe o motivo da manutenção."
+
+        :
+
+        "Ex: motorista de folga, veículo sem carga...";
+
+    if (
+        !manutencao
+        &&
+        classifyVehicleReturnDate
+    ) {
+
+        classifyVehicleReturnDate.value =
+            "";
+
+    }
+
+}
+
+function abrirModalClassificarVeiculo(
+    veiculo
+) {
+
+    if (
+        !classifyVehicleModal
+        ||
+        !classifyVehicleForm
+    ) {
+
+        return;
+
+    }
+
+    classifyVehicleForm.reset();
+
+    classifyVehicleId.value =
+        String(
+            veiculo.id
+        );
+
+    classifyVehiclePlate.textContent =
+        veiculo.placa;
+
+    classifyVehicleMeta.textContent =
+        [
+
+            veiculo.tipo
+            ||
+            "Tipo não informado",
+
+            veiculo.categoria
+            ||
+            "Categoria não informada"
+
+        ]
+            .filter(
+                Boolean
+            )
+            .join(
+                " • "
+            );
+
+    if (classifyVehicleMessage) {
+
+        classifyVehicleMessage.textContent =
+            "";
+
+        classifyVehicleMessage.className =
+            "form-message";
+
+    }
+
+    atualizarCamposClassificacao();
+
+    classifyVehicleModal.classList.add(
+        "active"
+    );
+
+}
+
+function fecharModalClassificarVeiculo() {
+
+    classifyVehicleModal
+        ?.classList
+        .remove(
+            "active"
+        );
+
+    classifyVehicleForm
+        ?.reset();
+
+    if (classifyVehicleReturnDateGroup) {
+
+        classifyVehicleReturnDateGroup.hidden =
+            true;
+
+    }
+
+    if (classifyVehicleReason) {
+
+        classifyVehicleReason.required =
+            false;
+
+    }
+
+    if (classifyVehicleMessage) {
+
+        classifyVehicleMessage.textContent =
+            "";
+
+        classifyVehicleMessage.className =
+            "form-message";
+
+    }
+
+}
+
+unclassifiedVehiclesTable?.addEventListener(
+
+    "click",
+
+    event => {
+
+        const button =
+            event.target.closest(
+                ".classify-unclassified-vehicle"
+            );
+
+        if (!button) {
+
+            return;
+
+        }
+
+        const vehicleId =
+            Number(
+                button.dataset.vehicleId
+            );
+
+        const veiculo =
+            veiculosSemClassificacao.find(
+
+                item =>
+                    item.id
+                    ===
+                    vehicleId
+
+            )
+            ||
+            buscarVeiculo(
+                vehicleId
+            );
+
+        if (!veiculo) {
+
+            return;
+
+        }
+
+        abrirModalClassificarVeiculo(
+            veiculo
+        );
+
+    }
+
+);
+
+classifyVehicleType?.addEventListener(
+
+    "change",
+
+    atualizarCamposClassificacao
+
+);
+
+closeClassifyVehicleModal?.addEventListener(
+
+    "click",
+
+    fecharModalClassificarVeiculo
+
+);
+
+cancelClassifyVehicleModal?.addEventListener(
+
+    "click",
+
+    fecharModalClassificarVeiculo
+
+);
+
+classifyVehicleForm?.addEventListener(
+
+    "submit",
+
+    async event => {
+
+        event.preventDefault();
+
+        const vehicleId =
+            Number(
+                classifyVehicleId.value
+            );
+
+        const classificacao =
+            classifyVehicleType.value;
+
+        const dataOperacao =
+            operationFilterDate.value;
+
+        const turno =
+            operationFilterShift.value;
+
+        if (
+            !vehicleId
+            ||
+            !classificacao
+            ||
+            !dataOperacao
+            ||
+            !turno
+        ) {
+
+            classifyVehicleMessage.textContent =
+                (
+                    "Não foi possível identificar o veículo, "
+                    +
+                    "a data, o turno ou a classificação."
+                );
+
+            classifyVehicleMessage.className =
+                "form-message error";
+
+            return;
+
+        }
+
+        saveClassifyVehicleButton.disabled =
+            true;
+
+        saveClassifyVehicleButton.textContent =
+            "Salvando...";
+
+        classifyVehicleMessage.textContent =
+            "";
+
+        try {
+
+            const response =
+                await fetch(
+
+                    (
+                        `/coleta/veiculos/${vehicleId}`
+                        +
+                        "/classificar"
+                    ),
+
+                    {
+
+                        method:
+                            "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json"
+
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                data:
+                                    dataOperacao,
+
+                                turno:
+                                    turno,
+
+                                classificacao:
+                                    classificacao,
+
+                                motivo:
+                                    classifyVehicleReason.value
+                                        .trim()
+                                    ||
+                                    null,
+
+                                previsao_retorno:
+
+                                    classificacao
+                                    ===
+                                    "MANUTENCAO"
+
+                                    &&
+
+                                    classifyVehicleReturnDate.value
+
+                                    ?
+
+                                    classifyVehicleReturnDate.value
+
+                                    :
+
+                                    null
+
+                            })
+
+                    }
+
+                );
+
+            const dados =
+                await response.json();
+
+            if (!response.ok) {
+
+                throw new Error(
+
+                    dados.detail
+
+                    ||
+
+                    "Não foi possível classificar o veículo."
+
+                );
+
+            }
+
+            classifyVehicleMessage.textContent =
+                dados.mensagem
+                ||
+                "Classificação salva com sucesso.";
+
+            classifyVehicleMessage.className =
+                "form-message success";
+
+            await carregarDados();
+
+            fecharModalClassificarVeiculo();
+
+        } catch (error) {
+
+            classifyVehicleMessage.textContent =
+                error.message;
+
+            classifyVehicleMessage.className =
+                "form-message error";
+
+        }
+
+        finally {
+
+            saveClassifyVehicleButton.disabled =
+                false;
+
+            saveClassifyVehicleButton.textContent =
+                "Salvar classificação";
+
+        }
+
+    }
+
+);
+
 // NAVEGAÇÃO
 
 function mostrarTela(
@@ -3469,6 +4339,8 @@ menuOperations?.addEventListener(
 
         aplicarFiltrosOperacao();
 
+        carregarVeiculosSemClassificacao();
+
     }
 
 );
@@ -3546,7 +4418,13 @@ operationFilterDate?.addEventListener(
 
     "change",
 
-    aplicarFiltrosOperacao
+    () => {
+
+        aplicarFiltrosOperacao();
+
+        carregarVeiculosSemClassificacao();
+
+    }
 
 );
 
@@ -3554,7 +4432,13 @@ operationFilterShift?.addEventListener(
 
     "change",
 
-    aplicarFiltrosOperacao
+    () => {
+
+        aplicarFiltrosOperacao();
+
+        carregarVeiculosSemClassificacao();
+
+    }
 
 );
 
@@ -4997,7 +5881,6 @@ editDriverForm?.addEventListener(
     async event => {
 
         event.preventDefault();
-
         const driverId =
             Number(
                 editDriverId.value
@@ -5998,7 +6881,6 @@ maintenanceHistoryTable?.addEventListener(
 function abrirModalFinalizarManutencao(
     maintenanceId
 ) {
-
     const manutencao =
         manutencoesAtivas.find(
 
@@ -6986,6 +7868,11 @@ const modais = [
     [
         operationModal,
         fecharModalOperacao
+    ],
+
+    [
+        classifyVehicleModal,
+        fecharModalClassificarVeiculo
     ]
 
 ];
@@ -6998,7 +7885,6 @@ modais.forEach(
     ]) => {
 
         modal?.addEventListener(
-
             "click",
 
             event => {
@@ -7057,6 +7943,8 @@ document.addEventListener(
         fecharDetalhesManutencao();
 
         fecharModalOperacao();
+
+        fecharModalClassificarVeiculo();
 
     }
 
@@ -7290,7 +8178,11 @@ function atualizarStatusSincronizacao(
 
         "sync-active",
 
-        statusEmAndamento
+        (
+            processoAtivo
+            &&
+            statusEmAndamento
+        )
 
     );
 
@@ -7320,6 +8212,88 @@ async function consultarStatusColetor() {
 
         const dados =
             await response.json();
+
+
+        const statusEmAndamento = [
+
+            "SOLICITADO",
+
+            "INICIANDO",
+
+            "AGUARDANDO_PAGINA",
+
+            "COLETANDO",
+
+            "PROCESSANDO",
+
+            "ENVIANDO"
+
+        ].includes(
+            dados.status
+        );
+
+
+        if (
+            dados.processo_ativo
+            ===
+            false
+            &&
+            statusEmAndamento
+        ) {
+
+            dados.status =
+                "ERRO";
+
+            dados.mensagem =
+                (
+                    "O coletor foi encerrado antes "
+                    +
+                    "de concluir a sincronização. "
+                    +
+                    "Confira automation/coletor_execucao.log."
+                );
+
+        }
+
+
+        if (
+            dados.status
+            ===
+            "CONCLUIDO"
+        ) {
+
+            const partesResumo = [
+
+                `Recebidos: ${dados.recebidos ?? 0}`,
+
+                `Importados: ${dados.importados ?? 0}`,
+
+                `Atualizados: ${dados.atualizados ?? 0}`,
+
+                `Ignorados: ${dados.ignorados ?? 0}`
+
+            ];
+
+
+            dados.mensagem =
+
+                (
+                    dados.mensagem
+                    ||
+                    "Sincronização concluída com sucesso."
+                )
+
+                +
+
+                " "
+
+                +
+
+                partesResumo.join(
+                    " • "
+                );
+
+        }
 
 
         atualizarStatusSincronizacao(
@@ -7510,6 +8484,10 @@ syncOperationButton?.addEventListener(
             return;
 
         }
+
+
+        ultimaSincronizacaoConcluida =
+            null;
 
 
         syncOperationButton.disabled =

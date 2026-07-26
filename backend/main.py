@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import unicodedata
 
 from datetime import date, datetime
 from pathlib import Path
@@ -90,6 +91,63 @@ def limpar_texto_opcional(valor: str | None) -> str | None:
 
     valor_limpo = valor.strip()
     return valor_limpo or None
+
+
+def criar_chave_busca(valor: str | None) -> str | None:
+    texto = limpar_texto_opcional(valor)
+
+    if not texto:
+        return None
+
+    texto_sem_acento = "".join(
+        caractere
+        for caractere in unicodedata.normalize(
+            "NFKD",
+            texto,
+        )
+        if not unicodedata.combining(
+            caractere
+        )
+    )
+
+    return " ".join(
+        texto_sem_acento
+        .casefold()
+        .split()
+    )
+
+
+
+def combinar_textos_operacao(
+    cluster: str | None,
+    observacao: str | None,
+) -> str | None:
+    partes = []
+
+    for valor in (
+        cluster,
+        observacao,
+    ):
+        texto = limpar_texto_opcional(
+            valor
+        )
+
+        if (
+            texto
+            and
+            texto not in partes
+        ):
+            partes.append(
+                texto
+            )
+
+    return (
+        " | ".join(
+            partes
+        )
+        or
+        None
+    )
 
 
 # VEÍCULOS
@@ -649,7 +707,14 @@ def excluir_motorista(
 # OPERAÇÕES
 
 STATUS_OPERACAO = {
+    # STATUS VINDOS DO LAST MILE
     "CARREGANDO",
+    "EM_ROTA",
+    "CONCLUIDA",
+    "RETORNANDO_ESTACAO",
+    "AMBULANCIA",
+
+    # STATUS MANUAIS DO HAWK
     "RESERVA_CARREGANDO",
     "FOLGA",
     "IMPEDIDO",
@@ -1296,478 +1361,668 @@ def importar_coleta(
     coleta: schemas.ColetaImportarRequest,
     db: Session = Depends(get_db),
 ):
-
-    # VALIDAÇÕES GERAIS
-
     turno = coleta.turno.strip()
 
     if not turno:
-
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Informe o turno da coleta.",
         )
 
-
     origem = (
-        coleta.origem
-        .strip()
-        .upper()
+        coleta.origem.strip().upper()
         or
         "HAWK_COLLECTOR"
     )
-
-
-    # CARREGAR VEÍCULOS E MOTORISTAS
 
     veiculos = db.scalars(
         select(models.Veiculo)
     ).all()
 
-
     motoristas = db.scalars(
         select(models.Motorista)
     ).all()
 
-
     veiculos_por_placa = {
-
-        veiculo.placa
-        .strip()
-        .upper():
-
-        veiculo
-
+        veiculo.placa.strip().upper(): veiculo
         for veiculo in veiculos
-
     }
-
 
     motoristas_por_nome = {
-
-        motorista.nome
-        .strip()
-        .casefold():
-
-        motorista
-
+        criar_chave_busca(
+            motorista.nome
+        ): motorista
         for motorista in motoristas
-
+        if criar_chave_busca(
+            motorista.nome
+        )
     }
 
-
-    # MANUTENÇÕES ATIVAS
-
-    manutencoes_ativas = db.scalars(
-
+    manutencoes_no_periodo = db.scalars(
         select(models.Manutencao)
         .where(
-            models.Manutencao.status
-            ==
-            "EM_MANUTENCAO"
+            models.Manutencao.data_entrada
+            <=
+            coleta.data,
+            or_(
+                models.Manutencao.data_retorno.is_(None),
+                models.Manutencao.data_retorno
+                >=
+                coleta.data,
+            ),
         )
-
     ).all()
 
-
     ids_em_manutencao = {
-
         manutencao.veiculo_id
-
-        for manutencao in manutencoes_ativas
-
+        for manutencao in manutencoes_no_periodo
     }
 
-
-    # CONTADORES
-
     importados = 0
-
     atualizados = 0
-
     ignorados = 0
-
     pendencias = []
 
-
-    # PROCESSAR REGISTROS
-
-    for registro in coleta.registros:
-
-        placa = (
-            registro.placa
-            .strip()
-            .upper()
-        )
-
-
-        status_registro = (
-            registro.status
-            .strip()
-            .upper()
-        )
-
-
-    
-        # PLACA VAZIA
-    
-
-        if not placa:
-
-            ignorados += 1
-
-
-            pendencias.append({
-
-                "placa":
-                    None,
-
-                "motivo":
-                    "Registro sem placa.",
-
-            })
-
-
-            continue
-
-
-    
-        # VEÍCULO NÃO CADASTRADO
-    
-
-        veiculo = (
-            veiculos_por_placa.get(
-                placa
+    try:
+        for registro in coleta.registros:
+            placa = (
+                registro.placa
+                .strip()
+                .upper()
             )
-        )
 
+            status_registro = (
+                registro.status
+                .strip()
+                .upper()
+            )
 
-        if not veiculo:
+            if not placa:
+                ignorados += 1
 
-            ignorados += 1
+                pendencias.append({
+                    "placa": None,
+                    "motivo": "Registro sem placa.",
+                })
 
+                continue
 
-            pendencias.append({
+            if (
+                status_registro
+                not in
+                STATUS_OPERACAO
+            ):
+                ignorados += 1
 
-                "placa":
-                    placa,
-
-                "motivo":
-                    "Veículo não cadastrado no Hawk.",
-
-            })
-
-
-            continue
-
-
-    
-        # VEÍCULO INATIVO
-    
-
-        if not veiculo.ativo:
-
-            ignorados += 1
-
-
-            pendencias.append({
-
-                "placa":
-                    placa,
-
-                "motivo":
-                    "Veículo está inativo.",
-
-            })
-
-
-            continue
-
-
-    
-        # VEÍCULO EM MANUTENÇÃO
-    
-
-        if (
-            veiculo.id
-            in
-            ids_em_manutencao
-        ):
-
-            ignorados += 1
-
-
-            pendencias.append({
-
-                "placa":
-                    placa,
-
-                "motivo":
-                    "Veículo está em manutenção.",
-
-            })
-
-
-            continue
-
-
-    
-        # STATUS DESCONHECIDO
-    
-
-        if (
-            status_registro
-            not in
-            STATUS_OPERACAO
-        ):
-
-            ignorados += 1
-
-
-            pendencias.append({
-
-                "placa":
-                    placa,
-
-                "motivo":
-                    (
+                pendencias.append({
+                    "placa": placa,
+                    "motivo": (
                         "Status não reconhecido: "
                         f"{status_registro}"
                     ),
+                })
 
-            })
+                continue
 
-
-            continue
-
-
-    
-        # MOTORISTA
-    
-
-        motorista_id = None
-
-
-        if registro.motorista:
-
-            nome_motorista = (
-                registro.motorista
-                .strip()
+            tipo_veiculo = (
+                limpar_texto_opcional(
+                    registro.tipo_veiculo
+                )
             )
 
+            veiculo = (
+                veiculos_por_placa.get(
+                    placa
+                )
+            )
 
-            motorista = (
-
-                motoristas_por_nome.get(
-
-                    nome_motorista.casefold()
-
+            if not veiculo:
+                veiculo = models.Veiculo(
+                    placa=placa,
+                    tipo=tipo_veiculo,
+                    categoria="Integração ML",
+                    observacao=(
+                        "Cadastrado automaticamente "
+                        "pela sincronização do Mercado Livre."
+                    ),
+                    ativo=True,
                 )
 
-            )
+                db.add(
+                    veiculo
+                )
 
+                db.flush()
 
-            if not motorista:
+                veiculos_por_placa[
+                    placa
+                ] = veiculo
 
+            elif tipo_veiculo:
+                tipo_atual = (
+                    limpar_texto_opcional(
+                        veiculo.tipo
+                    )
+                )
+
+                cadastro_automatico = (
+                    veiculo.categoria
+                    ==
+                    "Integração ML"
+                )
+
+                if (
+                    not tipo_atual
+                    or
+                    cadastro_automatico
+                ):
+                    veiculo.tipo = (
+                        tipo_veiculo
+                    )
+
+            if not veiculo.ativo:
                 ignorados += 1
 
-
                 pendencias.append({
-
-                    "placa":
-                        placa,
-
-                    "motivo":
-                        (
-                            "Motorista não cadastrado: "
-                            f"{nome_motorista}"
-                        ),
-
+                    "placa": placa,
+                    "motivo": (
+                        "Veículo está inativo. "
+                        "O cadastro não foi reativado "
+                        "automaticamente."
+                    ),
                 })
-
 
                 continue
 
-
-            if not motorista.ativo:
-
+            if (
+                veiculo.id
+                in
+                ids_em_manutencao
+            ):
                 ignorados += 1
 
-
                 pendencias.append({
+                    "placa": placa,
+                    "motivo": (
+                        "Veículo estava em manutenção "
+                        "na data consultada."
+                    ),
+                })
 
-                    "placa":
-                        placa,
+                continue
 
-                    "motivo":
-                        (
+            motorista_id = None
+
+            if registro.motorista:
+                nome_motorista = (
+                    registro.motorista
+                    .strip()
+                )
+
+                chave_motorista = (
+                    criar_chave_busca(
+                        nome_motorista
+                    )
+                )
+
+                motorista = (
+                    motoristas_por_nome.get(
+                        chave_motorista
+                    )
+                    if chave_motorista
+                    else None
+                )
+
+                if not motorista:
+                    motorista = models.Motorista(
+                        nome=nome_motorista,
+                        telefone=None,
+                        observacao=(
+                            "Cadastrado automaticamente "
+                            "pela sincronização do Mercado Livre."
+                        ),
+                        ativo=True,
+                    )
+
+                    db.add(
+                        motorista
+                    )
+
+                    db.flush()
+
+                    if chave_motorista:
+                        motoristas_por_nome[
+                            chave_motorista
+                        ] = motorista
+
+                if not motorista.ativo:
+                    ignorados += 1
+
+                    pendencias.append({
+                        "placa": placa,
+                        "motivo": (
                             "Motorista está inativo: "
-                            f"{nome_motorista}"
+                            f"{nome_motorista}. "
+                            "O cadastro não foi reativado "
+                            "automaticamente."
                         ),
+                    })
 
-                })
+                    continue
 
+                motorista_id = (
+                    motorista.id
+                )
 
-                continue
-
-
-            motorista_id = (
-                motorista.id
-            )
-
-
-    
-        # VERIFICAR REGISTRO JÁ EXISTENTE
-    
-
-        operacao_existente = db.scalar(
-
-            select(models.Operacao)
-
-            .where(
-
-                models.Operacao.data
-                ==
-                coleta.data,
-
-                models.Operacao.turno
-                ==
-                turno,
-
-                models.Operacao.veiculo_id
-                ==
-                veiculo.id,
-
-            )
-
-        )
-
-
-        rota_id = (
-            limpar_texto_opcional(
-                registro.rota_id
-            )
-        )
-
-
-        observacao = (
-            limpar_texto_opcional(
-                registro.observacao
-            )
-        )
-
-
-    
-        # ATUALIZAR
-    
-
-        if operacao_existente:
-
-            operacao_existente.motorista_id = (
-                motorista_id
-            )
-
-            operacao_existente.rota_id = (
-                rota_id
-            )
-
-            operacao_existente.status = (
-                status_registro
-            )
-
-            operacao_existente.observacao = (
-                observacao
-            )
-
-            operacao_existente.origem = (
-                origem
-            )
-
-
-            atualizados += 1
-
-
-    
-        # CRIAR
-    
-
-        else:
-
-            nova_operacao = models.Operacao(
-
-                data=
+            operacao_existente = db.scalar(
+                select(models.Operacao)
+                .where(
+                    models.Operacao.data
+                    ==
                     coleta.data,
-
-                turno=
+                    models.Operacao.turno
+                    ==
                     turno,
-
-                veiculo_id=
+                    models.Operacao.veiculo_id
+                    ==
                     veiculo.id,
-
-                motorista_id=
-                    motorista_id,
-
-                rota_id=
-                    rota_id,
-
-                status=
-                    status_registro,
-
-                observacao=
-                    observacao,
-
-                origem=
-                    origem,
-
+                )
             )
 
-
-            db.add(
-                nova_operacao
+            rota_id = (
+                limpar_texto_opcional(
+                    registro.rota_id
+                )
             )
 
+            observacao = (
+                combinar_textos_operacao(
+                    registro.cluster,
+                    registro.observacao,
+                )
+            )
 
-            importados += 1
+            if operacao_existente:
+                origem_existente = (
+                    operacao_existente.origem
+                    or
+                    ""
+                ).strip().upper()
 
+                if origem_existente == "MANUAL":
+                    ignorados += 1
 
-    # SALVAR
+                    pendencias.append({
+                        "placa": placa,
+                        "motivo": (
+                            "Já existe um registro manual "
+                            "neste turno. O registro manual "
+                            "foi preservado."
+                        ),
+                    })
 
-    db.commit()
+                    continue
 
+                operacao_existente.motorista_id = (
+                    motorista_id
+                )
 
-    # RESPOSTA
+                operacao_existente.rota_id = (
+                    rota_id
+                )
+
+                operacao_existente.status = (
+                    status_registro
+                )
+
+                operacao_existente.observacao = (
+                    observacao
+                )
+
+                operacao_existente.origem = (
+                    origem
+                )
+
+                atualizados += 1
+
+            else:
+                nova_operacao = models.Operacao(
+                    data=coleta.data,
+                    turno=turno,
+                    veiculo_id=veiculo.id,
+                    motorista_id=motorista_id,
+                    rota_id=rota_id,
+                    status=status_registro,
+                    observacao=observacao,
+                    origem=origem,
+                )
+
+                db.add(
+                    nova_operacao
+                )
+
+                importados += 1
+
+        db.commit()
+
+    except Exception:
+        db.rollback()
+        raise
 
     return schemas.ColetaImportarResponse(
-
-        recebidos=
-            len(
-                coleta.registros
-            ),
-
-        importados=
-            importados,
-
-        atualizados=
-            atualizados,
-
-        ignorados=
-            ignorados,
-
-        pendencias=
-            pendencias,
-
+        recebidos=len(
+            coleta.registros
+        ),
+        importados=importados,
+        atualizados=atualizados,
+        ignorados=ignorados,
+        pendencias=pendencias,
     )
 
+
+# =====================================================
+# VEÍCULOS SEM REGISTRO NO TURNO
+# =====================================================
+
+@app.get(
+    "/coleta/veiculos-sem-registro",
+    response_model=list[
+        schemas.VeiculoSemRegistroResponse
+    ],
+    tags=["Coleta"],
+)
+def listar_veiculos_sem_registro(
+    data_operacao: date,
+    turno: str,
+    db: Session = Depends(get_db),
+):
+    turno_normalizado = turno.strip()
+
+    if not turno_normalizado:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Informe o turno.",
+        )
+
+    veiculos = db.scalars(
+        select(models.Veiculo)
+        .where(
+            models.Veiculo.ativo.is_(True)
+        )
+        .order_by(
+            models.Veiculo.placa
+        )
+    ).all()
+
+    operacoes = db.scalars(
+        select(models.Operacao)
+        .where(
+            models.Operacao.data
+            ==
+            data_operacao,
+            models.Operacao.turno
+            ==
+            turno_normalizado,
+        )
+    ).all()
+
+    manutencoes = db.scalars(
+        select(models.Manutencao)
+        .where(
+            models.Manutencao.data_entrada
+            <=
+            data_operacao,
+            or_(
+                models.Manutencao.data_retorno.is_(None),
+                models.Manutencao.data_retorno
+                >=
+                data_operacao,
+            ),
+        )
+    ).all()
+
+    ids_com_operacao = {
+        operacao.veiculo_id
+        for operacao in operacoes
+        if operacao.veiculo_id is not None
+    }
+
+    ids_em_manutencao = {
+        manutencao.veiculo_id
+        for manutencao in manutencoes
+    }
+
+    return [
+        veiculo
+        for veiculo in veiculos
+        if (
+            veiculo.id
+            not in
+            ids_com_operacao
+            and
+            veiculo.id
+            not in
+            ids_em_manutencao
+        )
+    ]
+
+
+CLASSIFICACOES_AUSENCIA = {
+    "MANUTENCAO",
+    "FOLGA",
+    "IMPEDIDO",
+    "SEM_CARGA",
+    "OUTRO_SERVICE",
+    "INDISPONIVEL_MOTORISTA",
+}
+
+
+@app.post(
+    "/coleta/veiculos/{veiculo_id}/classificar",
+    response_model=(
+        schemas.ClassificarVeiculoAusenteResponse
+    ),
+    tags=["Coleta"],
+)
+def classificar_veiculo_ausente(
+    veiculo_id: int,
+    dados: (
+        schemas.ClassificarVeiculoAusenteRequest
+    ),
+    db: Session = Depends(get_db),
+):
+    veiculo = db.get(
+        models.Veiculo,
+        veiculo_id,
+    )
+
+    if not veiculo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Veículo não encontrado.",
+        )
+
+    if not veiculo.ativo:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Este veículo está inativo.",
+        )
+
+    turno = dados.turno.strip()
+
+    if not turno:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Informe o turno.",
+        )
+
+    classificacao = (
+        dados.classificacao
+        .strip()
+        .upper()
+    )
+
+    if (
+        classificacao
+        not in
+        CLASSIFICACOES_AUSENCIA
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Classificação inválida. Use "
+                "MANUTENCAO, FOLGA, IMPEDIDO, "
+                "SEM_CARGA, OUTRO_SERVICE ou "
+                "INDISPONIVEL_MOTORISTA."
+            ),
+        )
+
+    operacao_existente = db.scalar(
+        select(models.Operacao)
+        .where(
+            models.Operacao.data
+            ==
+            dados.data,
+            models.Operacao.turno
+            ==
+            turno,
+            models.Operacao.veiculo_id
+            ==
+            veiculo.id,
+        )
+    )
+
+    if operacao_existente:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Este veículo já possui um registro "
+                "neste turno."
+            ),
+        )
+
+    motivo = (
+        limpar_texto_opcional(
+            dados.motivo
+        )
+    )
+
+    if classificacao == "MANUTENCAO":
+        manutencao_existente = db.scalar(
+            select(models.Manutencao)
+            .where(
+                models.Manutencao.veiculo_id
+                ==
+                veiculo.id,
+                models.Manutencao.data_entrada
+                <=
+                dados.data,
+                or_(
+                    models.Manutencao.data_retorno.is_(
+                        None
+                    ),
+                    models.Manutencao.data_retorno
+                    >=
+                    dados.data,
+                ),
+            )
+        )
+
+        if manutencao_existente:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "O veículo já possui manutenção "
+                    "registrada nesta data."
+                ),
+            )
+
+        motivo_manutencao = (
+            motivo
+            or
+            "Manutenção informada pela operação."
+        )
+
+        nova_manutencao = models.Manutencao(
+            veiculo_id=veiculo.id,
+            motivo=motivo_manutencao,
+            data_entrada=dados.data,
+            previsao_retorno=(
+                dados.previsao_retorno
+            ),
+            status="EM_MANUTENCAO",
+        )
+
+        db.add(
+            nova_manutencao
+        )
+
+        db.commit()
+        db.refresh(
+            nova_manutencao
+        )
+
+        return {
+            "tipo_registro": "MANUTENCAO",
+            "mensagem": (
+                f"{veiculo.placa} foi registrado "
+                "em manutenção."
+            ),
+            "operacao": None,
+            "manutencao": nova_manutencao,
+        }
+
+    nova_operacao = models.Operacao(
+        data=dados.data,
+        turno=turno,
+        veiculo_id=veiculo.id,
+        motorista_id=None,
+        rota_id=None,
+        status=classificacao,
+        observacao=motivo,
+        origem="MANUAL",
+    )
+
+    db.add(
+        nova_operacao
+    )
+
+    db.commit()
+    db.refresh(
+        nova_operacao
+    )
+
+    return {
+        "tipo_registro": "OPERACAO",
+        "mensagem": (
+            f"{veiculo.placa} foi classificado "
+            "com sucesso."
+        ),
+        "operacao": nova_operacao,
+        "manutencao": None,
+    }
+
+# =====================================================
 # PANORAMA
+# =====================================================
 
 LEGENDA_STATUS = {
-    "CARREGANDO": "✅",
+    # STATUS AUTOMÁTICOS
+    "CARREGANDO": "📦",
+    "EM_ROTA": "🚚",
+    "CONCLUIDA": "✅",
+    "RETORNANDO_ESTACAO": "↩️",
+    "AMBULANCIA": "🚑",
+
+    # STATUS MANUAIS
     "RESERVA_CARREGANDO": "🚗",
     "FOLGA": "⚠️ Folga planejada",
     "IMPEDIDO": "🚫 Impedido de rodar",
     "SEM_CARGA": "📦 Sem carga",
     "OUTRO_SERVICE": "🔄 Rodou em outro service",
-    "INDISPONIVEL_MOTORISTA": "⏸️ Indisponível / motorista",
+    "INDISPONIVEL_MOTORISTA": (
+        "⏸️ Indisponível / motorista"
+    ),
 }
 
 
@@ -1781,26 +2036,27 @@ def gerar_panorama(
     turno: str | None = None,
     db: Session = Depends(get_db),
 ):
-
-    # FROTA ATIVA
-
     veiculos = db.scalars(
         select(models.Veiculo)
-        .where(models.Veiculo.ativo.is_(True))
-        .order_by(models.Veiculo.placa)
+        .where(
+            models.Veiculo.ativo.is_(True)
+        )
+        .order_by(
+            models.Veiculo.placa
+        )
     ).all()
-
-
-    # MANUTENÇÕES VÁLIDAS NA DATA CONSULTADA
-
 
     manutencoes = db.scalars(
         select(models.Manutencao)
         .where(
-            models.Manutencao.data_entrada <= data_operacao,
+            models.Manutencao.data_entrada
+            <=
+            data_operacao,
             or_(
                 models.Manutencao.data_retorno.is_(None),
-                models.Manutencao.data_retorno >= data_operacao,
+                models.Manutencao.data_retorno
+                >=
+                data_operacao,
             ),
         )
         .order_by(
@@ -1809,28 +2065,24 @@ def gerar_panorama(
         )
     ).all()
 
-
-
-    # OPERAÇÕES
-
-
     consulta_operacoes = (
         select(models.Operacao)
         .where(
-            models.Operacao.data == data_operacao
+            models.Operacao.data
+            ==
+            data_operacao
         )
     )
 
-
     if turno:
-
         consulta_operacoes = (
             consulta_operacoes
             .where(
-                models.Operacao.turno == turno
+                models.Operacao.turno
+                ==
+                turno
             )
         )
-
 
     operacoes = db.scalars(
         consulta_operacoes
@@ -1840,33 +2092,24 @@ def gerar_panorama(
         )
     ).all()
 
-
-
-    # INFORMAÇÕES AUXILIARES
-
-
     veiculos_por_id = {
         veiculo.id: veiculo
         for veiculo in veiculos
     }
 
-
     motoristas = db.scalars(
         select(models.Motorista)
     ).all()
-
 
     motoristas_por_id = {
         motorista.id: motorista
         for motorista in motoristas
     }
 
-
     ids_em_manutencao = {
         manutencao.veiculo_id
         for manutencao in manutencoes
     }
-
 
     ids_com_operacao = {
         operacao.veiculo_id
@@ -1874,27 +2117,19 @@ def gerar_panorama(
         if operacao.veiculo_id is not None
     }
 
-
     veiculos_sem_registro = [
-
         veiculo
-
         for veiculo in veiculos
-
         if (
-            veiculo.id not in ids_em_manutencao
-
+            veiculo.id
+            not in
+            ids_em_manutencao
             and
-
-            veiculo.id not in ids_com_operacao
+            veiculo.id
+            not in
+            ids_com_operacao
         )
-
     ]
-
-
-
-    # CABEÇALHO
-
 
     data_formatada = (
         data_operacao.strftime(
@@ -1902,160 +2137,113 @@ def gerar_panorama(
         )
     )
 
-
     turno_formatado = (
         turno
         if turno
         else "Todos os turnos"
     )
 
-
     linhas = [
-
         "━━━━━━━━━━━━━━━━━━━━",
         "PANORAMA SSP17: SBC",
         "MLP: HAWK TRANSPORTES",
         "━━━━━━━━━━━━━━━━━━━━",
-
         "",
-
         f"📅 Data: {data_formatada}",
         f"🕐 Turno: {turno_formatado}",
-
         "",
-
         "📊 RESUMO",
-
         "",
-
         (
             "🚚 Quantidade total de veículos "
             f"na base: {len(veiculos)}"
         ),
-
         (
-            "✅ Registros operacionais: "
+            "📍 Registros no período: "
             f"{len(operacoes)}"
         ),
-
         (
             "🛠️ Veículos em manutenção: "
             f"{len(manutencoes)}"
         ),
-
         (
-            "⚪ Veículos sem registro no período: "
+            "⚪ Veículos sem classificação: "
             f"{len(veiculos_sem_registro)}"
         ),
-
         "",
-
         "LEGENDA",
-
         "",
-
-        "✅ Carregando",
+        "📦 Carregando",
+        "🚚 Em rota",
+        "✅ Concluída",
+        "↩️ Retornando à estação",
+        "🚑 Ambulância entre paradas",
         "🚗 Carro reserva / Carregando",
-        "⚠️ Folga planejada motorista",
+        "⚠️ Folga planejada",
         "🛠️ Manutenção",
-        "🚫 Impedido de rodar no dia",
+        "🚫 Impedido de rodar",
         "📦 Sem carga",
         "🔄 Rodou em outro service",
         "⏸️ Indisponível / motorista",
-
     ]
 
-
-
-    # OPERAÇÃO
-
-
     if operacoes:
-
         linhas.extend([
-
             "",
-
             "━━━━━━━━━━━━━━━━━━━━",
-
-            "🚚 FROTA EM OPERAÇÃO",
-
+            "📍 SITUAÇÃO DA FROTA",
             "━━━━━━━━━━━━━━━━━━━━",
-
         ])
-
 
         turnos_encontrados = []
 
-
         for operacao in operacoes:
-
             if (
                 operacao.turno
-                not in turnos_encontrados
+                not in
+                turnos_encontrados
             ):
-
                 turnos_encontrados.append(
                     operacao.turno
                 )
 
-
         for turno_atual in turnos_encontrados:
-
             operacoes_turno = [
-
                 operacao
-
                 for operacao in operacoes
-
                 if (
                     operacao.turno
                     ==
                     turno_atual
                 )
-
             ]
 
-
             linhas.extend([
-
                 "",
-
                 f"▸ {turno_atual.upper()}",
-
                 "",
-
             ])
 
-
             operacoes_turno.sort(
-
-                key=lambda operacao:
-
-                    (
-                        veiculos_por_id.get(
-                            operacao.veiculo_id
-                        ).placa
-
-                        if (
-                            operacao.veiculo_id
-                            in veiculos_por_id
-                        )
-
-                        else ""
+                key=lambda operacao: (
+                    veiculos_por_id.get(
+                        operacao.veiculo_id
+                    ).placa
+                    if (
+                        operacao.veiculo_id
+                        in
+                        veiculos_por_id
                     )
-
+                    else ""
+                )
             )
 
-
             for operacao in operacoes_turno:
-
                 veiculo = (
                     veiculos_por_id.get(
                         operacao.veiculo_id
                     )
                 )
-
 
                 motorista = (
                     motoristas_por_id.get(
@@ -2063,190 +2251,115 @@ def gerar_panorama(
                     )
                 )
 
-
                 placa = (
-
                     veiculo.placa
-
                     if veiculo
-
                     else "SEM VEÍCULO"
-
                 )
-
 
                 status_texto = (
-
                     LEGENDA_STATUS.get(
-
                         operacao.status,
-
-                        operacao.status
-
+                        operacao.status,
                     )
-
                 )
-
 
                 linha = (
                     f"{placa} {status_texto}"
                 )
 
-
                 if operacao.rota_id:
-
                     linha += (
-                        f" • Rota: "
+                        " • Rota: "
                         f"{operacao.rota_id}"
                     )
 
-
                 if motorista:
-
                     linha += (
-                        f" • "
-                        f"{motorista.nome}"
+                        f" • {motorista.nome}"
                     )
-
 
                 if operacao.observacao:
-
                     linha += (
-                        f" - "
-                        f"{operacao.observacao}"
+                        f" - {operacao.observacao}"
                     )
-
 
                 linhas.append(
                     linha
                 )
 
-
-
-    # MANUTENÇÕES
-
-
     linhas.extend([
-
         "",
-
         "━━━━━━━━━━━━━━━━━━━━",
-
         "🛠️ CARROS EM MANUTENÇÃO",
-
         "━━━━━━━━━━━━━━━━━━━━",
-
         "",
-
     ])
 
-
     if manutencoes:
-
         manutencoes_ordenadas = sorted(
-
             manutencoes,
-
-            key=lambda manutencao:
-
-                (
-                    veiculos_por_id.get(
-                        manutencao.veiculo_id
-                    ).placa
-
-                    if (
-                        manutencao.veiculo_id
-                        in veiculos_por_id
-                    )
-
-                    else ""
+            key=lambda manutencao: (
+                veiculos_por_id.get(
+                    manutencao.veiculo_id
+                ).placa
+                if (
+                    manutencao.veiculo_id
+                    in
+                    veiculos_por_id
                 )
-
+                else ""
+            )
         )
 
-
         for manutencao in manutencoes_ordenadas:
-
             veiculo = (
                 veiculos_por_id.get(
                     manutencao.veiculo_id
                 )
             )
 
-
             if not veiculo:
-
                 continue
-
 
             linha = (
                 f"{veiculo.placa} 🛠️ "
                 f"{manutencao.motivo}"
             )
 
-
             if manutencao.previsao_retorno:
-
                 linha += (
-
                     " • Previsão: "
-
                     +
-
                     manutencao
                     .previsao_retorno
                     .strftime(
                         "%d/%m"
                     )
-
                 )
-
 
             linhas.append(
                 linha
             )
 
-
     else:
-
         linhas.append(
-
             "Nenhum veículo em manutenção."
-
         )
 
-
-
-    # VEÍCULOS SEM REGISTRO
-
-
     if veiculos_sem_registro:
-
         linhas.extend([
-
             "",
-
             "━━━━━━━━━━━━━━━━━━━━",
-
-            "⚪ SEM REGISTRO NO PERÍODO",
-
+            "⚪ SEM CLASSIFICAÇÃO NO PERÍODO",
             "━━━━━━━━━━━━━━━━━━━━",
-
             "",
-
         ])
 
-
         for veiculo in veiculos_sem_registro:
-
             linhas.append(
                 veiculo.placa
             )
-
-
-
-    # FINALIZAÇÃO
-
 
     texto_panorama = (
         "\n".join(
@@ -2254,31 +2367,17 @@ def gerar_panorama(
         )
     )
 
-
     return schemas.PanoramaResponse(
-
-        data=
-            data_operacao,
-
-        turno=
-            turno,
-
-        total_veiculos=
-            len(
-                veiculos
-            ),
-
-        veiculos_manutencao=
-            len(
-                manutencoes
-            ),
-
-        veiculos_operacao=
-            len(
-                operacoes
-            ),
-
-        texto=
-            texto_panorama,
-
+        data=data_operacao,
+        turno=turno,
+        total_veiculos=len(
+            veiculos
+        ),
+        veiculos_manutencao=len(
+            manutencoes
+        ),
+        veiculos_operacao=len(
+            operacoes
+        ),
+        texto=texto_panorama,
     )

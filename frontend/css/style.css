@@ -2910,3 +2910,339 @@ body {
     }
 
 }
+
+/* REFINOS DA SINCRONIZAÇÃO */
+
+.operation-sync-actions .primary-button,
+.operation-sync-actions .secondary-button {
+    min-width: 190px;
+    white-space: nowrap;
+}
+
+
+.secondary-button:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+
+    background: #f3f6f9;
+    color: var(--text-soft);
+
+    box-shadow: none;
+}
+
+
+.sync-status-content {
+    flex: 1;
+
+    min-width: 0;
+}
+
+
+.sync-status-content span {
+    line-height: 1.5;
+
+    overflow-wrap: anywhere;
+}
+
+
+.sync-status-card[data-status="CONCLUIDO"]
+.sync-status-icon {
+    background: #eaf9f2;
+}
+
+
+.sync-status-card[data-status="ERRO"]
+.sync-status-icon {
+    background: #fff1f0;
+}
+
+
+.sync-status-card[data-status="SEM_REGISTROS"]
+.sync-status-icon {
+    background: #fff8e6;
+}
+
+
+.sync-status-card[data-status="PARADO"],
+.sync-status-card[data-status="DESCONHECIDO"] {
+    border-left-color: #94a3b8;
+}
+
+
+.sync-status-card[data-status="PARADO"]
+.sync-status-icon,
+.sync-status-card[data-status="DESCONHECIDO"]
+.sync-status-icon {
+    background: #f1f5f9;
+}
+
+
+@media (max-width: 760px) {
+
+    .operation-sync-actions .primary-button,
+    .operation-sync-actions .secondary-button {
+        width: 100%;
+
+        min-width: 0;
+    }
+
+
+    .sync-status-card {
+        align-items: flex-start;
+    }
+
+}
+
+
+/* =====================================================
+   VEÍCULOS SEM CLASSIFICAÇÃO
+   ===================================================== */
+
+.unclassified-vehicles-panel {
+    margin-top: 24px;
+}
+
+.unclassified-vehicles-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 9px 13px;
+
+    background: #fff8e6;
+
+    border: 1px solid #f2d28b;
+    border-radius: 10px;
+}
+
+.unclassified-vehicles-summary span {
+    color: #765314;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.unclassified-vehicles-summary strong {
+    min-width: 28px;
+
+    color: #a16207;
+
+    font-size: 20px;
+    line-height: 1;
+
+    text-align: center;
+}
+
+.unclassified-vehicles-message {
+    min-height: 0;
+
+    margin: 0;
+    padding: 14px 24px;
+
+    border-bottom: 1px solid var(--border);
+
+    color: var(--text-soft);
+
+    line-height: 1.55;
+}
+
+.unclassified-vehicles-message.warning,
+.form-message.warning {
+    color: #8a5a06;
+    background: #fffaf0;
+}
+
+.unclassified-vehicles-message.success {
+    color: #118458;
+    background: #f2fbf7;
+}
+
+.unclassified-vehicles-message.error {
+    color: var(--danger);
+    background: var(--danger-soft);
+}
+
+#unclassifiedVehiclesTable td {
+    vertical-align: middle;
+}
+
+#unclassifiedVehiclesTable td:last-child {
+    min-width: 135px;
+}
+
+.classify-unclassified-vehicle {
+    color: var(--primary);
+
+    border-color: #cbdcf0;
+}
+
+.classify-unclassified-vehicle:hover {
+    color: #ffffff;
+
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+
+/* =====================================================
+   MODAL DE CLASSIFICAÇÃO
+   ===================================================== */
+
+.classification-vehicle-card {
+    display: grid;
+    grid-template-columns:
+        minmax(80px, auto)
+        minmax(0, 1fr);
+
+    column-gap: 16px;
+    row-gap: 4px;
+
+    align-items: center;
+
+    margin-bottom: 20px;
+    padding: 16px 17px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f7faff,
+            #edf4fb
+        );
+
+    border: 1px solid #d7e5f4;
+    border-radius: 12px;
+}
+
+.classification-vehicle-card span {
+    grid-row:
+        1
+        /
+        span 2;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 48px;
+    padding: 8px 11px;
+
+    color: var(--primary);
+
+    background: #ffffff;
+
+    border: 1px solid #d7e5f4;
+    border-radius: 9px;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.classification-vehicle-card strong {
+    min-width: 0;
+
+    color: var(--text);
+
+    font-size: 19px;
+    line-height: 1.2;
+
+    letter-spacing: 0.04em;
+
+    overflow-wrap: anywhere;
+}
+
+.classification-vehicle-card small {
+    min-width: 0;
+
+    color: var(--text-soft);
+
+    font-size: 11px;
+    line-height: 1.45;
+
+    overflow-wrap: anywhere;
+}
+
+#classifyVehicleReturnDateGroup[hidden] {
+    display: none;
+}
+
+#saveClassifyVehicleButton {
+    min-width: 165px;
+}
+
+
+/* =====================================================
+   STATUS OPERACIONAIS NOVOS
+   ===================================================== */
+
+#operationsTable .badge {
+    max-width: 100%;
+
+    line-height: 1.35;
+    white-space: normal;
+}
+
+#operationsTable td:nth-child(5) {
+    min-width: 170px;
+}
+
+#operationsTable td:nth-child(3) {
+    min-width: 120px;
+}
+
+
+/* =====================================================
+   RESPONSIVIDADE DA CLASSIFICAÇÃO
+   ===================================================== */
+
+@media (max-width: 900px) {
+
+    .unclassified-vehicles-panel
+    .fleet-panel-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .unclassified-vehicles-summary {
+        width: 100%;
+
+        justify-content: space-between;
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .unclassified-vehicles-message {
+        padding:
+            13px
+            16px;
+    }
+
+    .classification-vehicle-card {
+        grid-template-columns:
+            1fr;
+
+        row-gap: 8px;
+    }
+
+    .classification-vehicle-card span {
+        grid-row: auto;
+
+        justify-self: start;
+
+        min-height: auto;
+    }
+
+    #saveClassifyVehicleButton {
+        width: 100%;
+        min-width: 0;
+    }
+
+}

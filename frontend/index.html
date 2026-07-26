@@ -19,7 +19,7 @@
 
     <link
         rel="stylesheet"
-        href="/static/css/style.css?v=11"
+        href="/static/css/style.css?v=13"
     >
 </head>
 
@@ -237,26 +237,13 @@
         </div>
 
 
-        <div class="topbar-actions operation-sync-actions">
-
-            <button
-                class="secondary-button"
-                id="syncOperationButton"
-                type="button"
-            >
-                🔄 Sincronizar operação
-            </button>
-
-
-            <button
-                class="primary-button"
-                id="openOperationModal"
-                type="button"
-            >
-                + Registrar operação
-            </button>
-
-        </div>
+        <button
+            class="primary-button"
+            id="openDriverModal"
+            type="button"
+        >
+            + Novo motorista
+        </button>
 
     </header>
 
@@ -1464,13 +1451,26 @@
             </div>
 
 
-            <button
-                class="primary-button"
-                id="openOperationModal"
-                type="button"
-            >
-                + Registrar operação
-            </button>
+            <div class="topbar-actions operation-sync-actions">
+
+                <button
+                    class="secondary-button"
+                    id="syncOperationButton"
+                    type="button"
+                >
+                    🔄 Sincronizar operação
+                </button>
+
+
+                <button
+                    class="primary-button"
+                    id="openOperationModal"
+                    type="button"
+                >
+                    + Registrar operação
+                </button>
+
+            </div>
 
         </header>
 
@@ -1595,6 +1595,91 @@
                                 class="loading"
                             >
                                 Carregando operação...
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- VEÍCULOS SEM CLASSIFICAÇÃO -->
+
+        <section
+            class="panel unclassified-vehicles-panel"
+            id="unclassifiedVehiclesPanel"
+        >
+
+            <div class="panel-header fleet-panel-header">
+
+                <div>
+
+                    <h3>
+                        Veículos sem classificação no turno
+                    </h3>
+
+                    <p>
+                        Veículos ativos que não apareceram no Last Mile,
+                        não possuem operação registrada e não estão em manutenção.
+                    </p>
+
+                </div>
+
+
+                <div class="unclassified-vehicles-summary">
+
+                    <span>
+                        Pendentes
+                    </span>
+
+                    <strong id="unclassifiedVehiclesTotal">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="form-message unclassified-vehicles-message"
+                id="unclassifiedVehiclesMessage"
+            >
+                Selecione uma data e um turno específico para consultar.
+            </div>
+
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Placa</th>
+                            <th>Tipo</th>
+                            <th>Categoria</th>
+                            <th>Situação</th>
+                            <th>Ação</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="unclassifiedVehiclesTable">
+
+                        <tr>
+
+                            <td
+                                colspan="5"
+                                class="loading"
+                            >
+                                Selecione uma data e um turno específico.
                             </td>
 
                         </tr>
@@ -3293,33 +3378,58 @@
                                 Selecione
                             </option>
 
-                            <option value="CARREGANDO">
-                                ✅ Carregando
-                            </option>
+                            <optgroup label="Status da rota">
 
-                            <option value="RESERVA_CARREGANDO">
-                                🚗 Reserva / Carregando
-                            </option>
+                                <option value="CARREGANDO">
+                                    📦 Carregando
+                                </option>
 
-                            <option value="FOLGA">
-                                ⚠️ Folga
-                            </option>
+                                <option value="EM_ROTA">
+                                    🚚 Em rota
+                                </option>
 
-                            <option value="IMPEDIDO">
-                                🚫 Impedido
-                            </option>
+                                <option value="CONCLUIDA">
+                                    ✅ Concluída
+                                </option>
 
-                            <option value="SEM_CARGA">
-                                📦 Sem carga
-                            </option>
+                                <option value="RETORNANDO_ESTACAO">
+                                    ↩️ Retornando à estação
+                                </option>
 
-                            <option value="OUTRO_SERVICE">
-                                🔄 Outro service
-                            </option>
+                                <option value="AMBULANCIA">
+                                    🚑 Ambulância entre paradas
+                                </option>
 
-                            <option value="INDISPONIVEL_MOTORISTA">
-                                ⏸️ Indisponível / Motorista
-                            </option>
+                            </optgroup>
+
+
+                            <optgroup label="Classificações manuais">
+
+                                <option value="RESERVA_CARREGANDO">
+                                    🚗 Reserva / Carregando
+                                </option>
+
+                                <option value="FOLGA">
+                                    ⚠️ Folga
+                                </option>
+
+                                <option value="IMPEDIDO">
+                                    🚫 Impedido
+                                </option>
+
+                                <option value="SEM_CARGA">
+                                    📦 Sem carga
+                                </option>
+
+                                <option value="OUTRO_SERVICE">
+                                    🔄 Outro service
+                                </option>
+
+                                <option value="INDISPONIVEL_MOTORISTA">
+                                    ⏸️ Indisponível / Motorista
+                                </option>
+
+                            </optgroup>
 
                         </select>
 
@@ -3374,11 +3484,187 @@
 
         </div>
     
+<!-- MODAL CLASSIFICAR VEÍCULO SEM REGISTRO -->
+
+<div
+    class="modal-overlay"
+    id="classifyVehicleModal"
+>
+
+    <div class="modal">
+
+        <div class="modal-header">
+
+            <div>
+
+                <p class="eyebrow">
+                    PENDÊNCIA DO TURNO
+                </p>
+
+                <h3>
+                    Classificar veículo
+                </h3>
+
+                <p id="classifyVehicleContext">
+                    Informe por que o veículo não apareceu na operação.
+                </p>
+
+            </div>
+
+
+            <button
+                class="modal-close"
+                id="closeClassifyVehicleModal"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="classifyVehicleForm">
+
+            <input
+                id="classifyVehicleId"
+                type="hidden"
+            >
+
+
+            <div class="classification-vehicle-card">
+
+                <span>
+                    Veículo
+                </span>
+
+                <strong id="classifyVehiclePlate">
+                    --
+                </strong>
+
+                <small id="classifyVehicleMeta">
+                    Dados do cadastro
+                </small>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="classifyVehicleType">
+                    Classificação
+                </label>
+
+                <select
+                    id="classifyVehicleType"
+                    required
+                >
+
+                    <option value="">
+                        Selecione
+                    </option>
+
+                    <option value="MANUTENCAO">
+                        🛠️ Em manutenção
+                    </option>
+
+                    <option value="FOLGA">
+                        ⚠️ Folga
+                    </option>
+
+                    <option value="IMPEDIDO">
+                        🚫 Impedido de rodar
+                    </option>
+
+                    <option value="SEM_CARGA">
+                        📦 Sem carga
+                    </option>
+
+                    <option value="OUTRO_SERVICE">
+                        🔄 Rodou em outro service
+                    </option>
+
+                    <option value="INDISPONIVEL_MOTORISTA">
+                        ⏸️ Indisponível / motorista
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="classifyVehicleReason">
+                    Motivo ou observação
+                </label>
+
+                <textarea
+                    id="classifyVehicleReason"
+                    rows="4"
+                    placeholder="Ex: veículo aguardando peça, motorista de folga..."
+                ></textarea>
+
+            </div>
+
+
+            <div
+                class="form-group"
+                id="classifyVehicleReturnDateGroup"
+                hidden
+            >
+
+                <label for="classifyVehicleReturnDate">
+                    Previsão de retorno
+                </label>
+
+                <input
+                    id="classifyVehicleReturnDate"
+                    type="date"
+                >
+
+            </div>
+
+
+            <div
+                class="form-message"
+                id="classifyVehicleMessage"
+            ></div>
+
+
+            <div class="modal-actions">
+
+                <button
+                    class="secondary-button"
+                    id="cancelClassifyVehicleModal"
+                    type="button"
+                >
+                    Cancelar
+                </button>
+
+
+                <button
+                    class="primary-button"
+                    id="saveClassifyVehicleButton"
+                    type="submit"
+                >
+                    Salvar classificação
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
     <script
     src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"
     ></script>
 
-    <script src="/static/js/app.js?v=12"></script>
+    <script src="/static/js/app.js?v=14"></script>
 
 </body>
 
