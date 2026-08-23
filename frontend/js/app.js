@@ -762,6 +762,30 @@ const cancelImportOperationModal =
         "cancelImportOperationModal"
     );
 
+
+const importModeTabs = Array.from(document.querySelectorAll("[data-import-mode]"));
+const importModePanels = Array.from(document.querySelectorAll("[data-import-panel]"));
+const smartImportDate = document.getElementById("smartImportDate");
+const smartImportShift = document.getElementById("smartImportShift");
+const smartImportImages = document.getElementById("smartImportImages");
+const smartImportImageList = document.getElementById("smartImportImageList");
+const smartImportFiles = document.getElementById("smartImportFiles");
+const smartImportFileList = document.getElementById("smartImportFileList");
+const smartImportText = document.getElementById("smartImportText");
+const smartImportUseAi = document.getElementById("smartImportUseAi");
+const smartImportAnalyzeButton = document.getElementById("smartImportAnalyzeButton");
+const smartImportMessage = document.getElementById("smartImportMessage");
+const smartImportPreview = document.getElementById("smartImportPreview");
+const smartImportPreviewBody = document.getElementById("smartImportPreviewBody");
+const smartImportPreviewCount = document.getElementById("smartImportPreviewCount");
+const smartImportSummary = document.getElementById("smartImportSummary");
+const smartImportConfirmButton = document.getElementById("smartImportConfirmButton");
+const smartImportBackButton = document.getElementById("smartImportBackButton");
+const smartImportOverwriteManual = document.getElementById("smartImportOverwriteManual");
+const importAiStatus = document.getElementById("importAiStatus");
+let smartImportMode = "image";
+let smartImportRecords = [];
+
 // ELEMENTOS - VEÍCULOS SEM CLASSIFICAÇÃO
 
 const unclassifiedVehiclesPanel =
@@ -8181,21 +8205,52 @@ closeMaintenanceDetailsButton?.addEventListener(
 
 // MODAL OPERAÇÃO
 
-function abrirModalImportacaoOperacao() {
-
-    importOperationModal?.classList.add(
-        "active"
-    );
-
+function definirMensagemImportacao(texto = "", tipo = "") {
+    if (!smartImportMessage) return;
+    smartImportMessage.textContent = texto;
+    smartImportMessage.className = `form-message${tipo ? ` ${tipo}` : ""}`;
 }
 
+function resetarImportacaoInteligente() {
+    smartImportRecords = [];
+    if (smartImportOverwriteManual) smartImportOverwriteManual.checked = false;
+    if (smartImportPreview) smartImportPreview.hidden = true;
+    if (smartImportPreviewBody) smartImportPreviewBody.innerHTML = "";
+    if (smartImportSummary) smartImportSummary.innerHTML = "";
+    definirMensagemImportacao("");
+}
+
+async function carregarStatusIAImportacao() {
+    if (!importAiStatus) return;
+    try {
+        const response = await fetch("/importacoes/inteligente/status");
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        importAiStatus.classList.toggle("ready", Boolean(data.ia_configurada));
+        importAiStatus.innerHTML = data.ia_configurada
+            ? `<i data-lucide="sparkles"></i><div><strong>IA disponível</strong><span>Leitura de prints habilitada com ${escaparHTML(data.modelo || "modelo configurado")}. Texto e planilhas usam leitura local sempre que possível.</span></div>`
+            : `<i data-lucide="shield-check"></i><div><strong>Leitura local disponível</strong><span>Texto, CSV e Excel funcionam sem IA. Para analisar prints, configure a chave de IA no servidor.</span></div>`;
+        if (typeof lucide !== "undefined") lucide.createIcons();
+    } catch (_) {
+        importAiStatus.innerHTML = `<i data-lucide="info"></i><div><strong>Importação assistida</strong><span>Revise todos os dados antes de confirmar.</span></div>`;
+    }
+}
+
+function abrirModalImportacaoOperacao() {
+    if (smartImportDate) smartImportDate.value = operationFilterDate?.value || hojeISO();
+    if (smartImportShift) {
+        const turnoAtual = operationFilterShift?.value || "";
+        smartImportShift.value = ["Manhã", "Tarde", "Noite"].includes(turnoAtual)
+            ? turnoAtual
+            : "Não informado";
+    }
+    resetarImportacaoInteligente();
+    importOperationModal?.classList.add("active");
+    carregarStatusIAImportacao();
+}
 
 function fecharModalImportacaoOperacao() {
-
-    importOperationModal?.classList.remove(
-        "active"
-    );
-
+    importOperationModal?.classList.remove("active");
 }
 
 
@@ -8215,6 +8270,208 @@ cancelImportOperationModal?.addEventListener(
     "click",
     fecharModalImportacaoOperacao
 );
+
+
+function atualizarArquivosSelecionados(input, destino) {
+    if (!destino) return;
+    const arquivos = Array.from(input?.files || []);
+    destino.innerHTML = arquivos.length
+        ? arquivos.map(arquivo => `<span><i data-lucide="file"></i>${escaparHTML(arquivo.name)}</span>`).join("")
+        : "";
+    if (typeof lucide !== "undefined") lucide.createIcons();
+}
+
+importModeTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+        smartImportMode = tab.dataset.importMode;
+        importModeTabs.forEach(item => item.classList.toggle("active", item === tab));
+        importModePanels.forEach(panel => panel.classList.toggle("active", panel.dataset.importPanel === smartImportMode));
+        resetarImportacaoInteligente();
+    });
+});
+
+smartImportImages?.addEventListener("change", () => atualizarArquivosSelecionados(smartImportImages, smartImportImageList));
+smartImportFiles?.addEventListener("change", () => atualizarArquivosSelecionados(smartImportFiles, smartImportFileList));
+
+const IMPORT_STATUS_OPTIONS = [
+    ["CARREGANDO", "Carregando"],
+    ["EM_ROTA", "Em rota"],
+    ["CONCLUIDA", "Concluída"],
+    ["RETORNANDO_ESTACAO", "Retornando à estação"],
+    ["AMBULANCIA", "Ambulância entre paradas"],
+    ["RESERVA_CARREGANDO", "Reserva / carregando"],
+    ["INDISPONIVEL_MOTORISTA", "Indisponível / motorista"],
+    ["FOLGA", "Folga planejada"],
+    ["MANUTENCAO", "Manutenção"],
+    ["IMPEDIDO", "Impedido"],
+    ["SEM_CARGA", "Sem carga"],
+    ["OUTRO_SERVICE", "Outro service"],
+    ["SEM_CLASSIFICACAO", "Sem classificação"]
+];
+
+function opcoesStatusImportacao(valor) {
+    return IMPORT_STATUS_OPTIONS.map(([id, nome]) => `<option value="${id}" ${id === valor ? "selected" : ""}>${nome}</option>`).join("");
+}
+
+function renderizarPreviewImportacao(resultado) {
+    smartImportRecords = (resultado.registros || []).map(item => ({...item}));
+    if (resultado.data && smartImportDate) smartImportDate.value = resultado.data;
+    if (resultado.turno && smartImportShift && ["Não informado", "Geral", "Manhã", "Tarde", "Noite"].includes(resultado.turno)) {
+        smartImportShift.value = resultado.turno === "Geral" ? "Não informado" : resultado.turno;
+    }
+    if (!smartImportRecords.length) {
+        definirMensagemImportacao("Nenhum registro foi identificado.", "error");
+        return;
+    }
+    smartImportPreview.hidden = false;
+    smartImportPreviewCount.textContent = String(smartImportRecords.length);
+    const baixa = smartImportRecords.filter(item => item.confianca != null && item.confianca < .8).length;
+    const conflitos = smartImportRecords.filter(item => Boolean(item.alerta)).length;
+    const manut = smartImportRecords.filter(item => item.status === "MANUTENCAO").length;
+    smartImportSummary.innerHTML = `<span>${resultado.metodo === "ia" || resultado.metodo === "ia_imagem" ? "IA" : resultado.metodo === "misto" ? "Leitura mista" : "Leitura local"}</span><span>${manut} manutenção(ões)</span>${conflitos ? `<span class="danger">${conflitos} requer revisão</span>` : ""}${baixa ? `<span class="warning">${baixa} baixa confiança</span>` : ""}`;
+    smartImportPreviewBody.innerHTML = smartImportRecords.map((item, index) => {
+        const confianca = item.confianca == null ? "—" : `${Math.round(item.confianca * 100)}%`;
+        const needsReview = Boolean(item.alerta) || (item.confianca != null && item.confianca < .8);
+        const low = needsReview ? " needs-review" : "";
+        const revisao = item.alerta
+            ? `<small class="import-review-note" title="${escaparHTML(item.alerta)}"><i data-lucide="triangle-alert"></i> Revisar</small>`
+            : item.confianca != null && item.confianca < .8
+                ? `<small class="import-review-note"><i data-lucide="circle-help"></i> Conferir</small>`
+                : "";
+        return `<tr data-import-row="${index}" class="${low}" ${item.alerta ? `title="${escaparHTML(item.alerta)}"` : ""}>
+            <td><input data-field="placa" value="${escaparHTML(item.placa || "")}" /></td>
+            <td><input data-field="tipo_veiculo" value="${escaparHTML(item.tipo_veiculo || "")}" placeholder="Tipo" /></td>
+            <td><input data-field="motorista" value="${escaparHTML(item.motorista || "")}" placeholder="Motorista" /></td>
+            <td><input data-field="ajudante" value="${escaparHTML(item.ajudante || "")}" placeholder="Ajudante" /></td>
+            <td><input data-field="rota_id" value="${escaparHTML(item.rota_id || "")}" placeholder="Rota" /></td>
+            <td><select data-field="status">${opcoesStatusImportacao(item.status || "SEM_CLASSIFICACAO")}</select></td>
+            <td><input data-field="observacao" value="${escaparHTML(item.motivo || item.observacao || "")}" placeholder="Motivo ou observação" /></td>
+            <td class="import-confidence-cell"><span class="confidence-pill${needsReview ? " low-confidence" : ""}">${confianca}</span>${revisao}</td>
+            <td><button class="icon-button danger-light" data-remove-import="${index}" title="Remover linha" type="button"><i data-lucide="trash-2"></i></button></td>
+        </tr>`;
+    }).join("");
+    smartImportPreviewBody.querySelectorAll("[data-remove-import]").forEach(button => {
+        button.addEventListener("click", () => {
+            smartImportRecords.splice(Number(button.dataset.removeImport), 1);
+            renderizarPreviewImportacao({...resultado, registros: smartImportRecords});
+        });
+    });
+    if (resultado.avisos?.length) definirMensagemImportacao(resultado.avisos.join(" "), "warning");
+    else definirMensagemImportacao("Dados identificados. Revise a prévia antes de confirmar.", "success");
+    if (typeof lucide !== "undefined") lucide.createIcons();
+}
+
+function coletarPreviewEditado() {
+    const registros = [];
+    smartImportPreviewBody?.querySelectorAll("tr[data-import-row]").forEach(row => {
+        const index = Number(row.dataset.importRow);
+        const original = smartImportRecords[index] || {};
+        const get = campo => row.querySelector(`[data-field="${campo}"]`)?.value?.trim() || null;
+        const status = get("status") || "SEM_CLASSIFICACAO";
+        registros.push({
+            ...original,
+            placa: (get("placa") || "").toUpperCase().replace(/[^A-Z0-9]/g, ""),
+            tipo_veiculo: get("tipo_veiculo"),
+            motorista: get("motorista"),
+            ajudante: get("ajudante"),
+            rota_id: get("rota_id"),
+            status,
+            tipo_registro: status === "MANUTENCAO" ? "MANUTENCAO" : "OPERACAO",
+            motivo: status === "MANUTENCAO" || status === "IMPEDIDO" ? get("observacao") : null,
+            observacao: status === "MANUTENCAO" || status === "IMPEDIDO" ? null : get("observacao")
+        });
+    });
+    return registros.filter(item => item.placa);
+}
+
+async function analisarImportacaoInteligente() {
+    definirMensagemImportacao("Analisando dados...", "loading");
+    smartImportAnalyzeButton.disabled = true;
+    try {
+        let response;
+        if (smartImportMode === "text") {
+            const texto = smartImportText?.value?.trim();
+            if (!texto) throw new Error("Cole o panorama ou as informações que deseja importar.");
+            response = await fetch("/importacoes/inteligente/analisar-texto", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    texto,
+                    data: smartImportDate?.value || null,
+                    turno: smartImportShift?.value || null,
+                    usar_ia: Boolean(smartImportUseAi?.checked)
+                })
+            });
+        } else {
+            const input = smartImportMode === "image" ? smartImportImages : smartImportFiles;
+            const arquivos = Array.from(input?.files || []);
+            if (!arquivos.length) throw new Error(smartImportMode === "image" ? "Selecione ao menos um print." : "Selecione um arquivo Excel ou CSV.");
+            const form = new FormData();
+            arquivos.forEach(arquivo => form.append("arquivos", arquivo));
+            form.append("data_operacao", smartImportDate?.value || "");
+            form.append("turno", smartImportShift?.value || "");
+            response = await fetch("/importacoes/inteligente/analisar-arquivos", {method: "POST", body: form});
+        }
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Não foi possível analisar os dados.");
+        renderizarPreviewImportacao(data);
+    } catch (error) {
+        definirMensagemImportacao(error.message || "Não foi possível analisar os dados.", "error");
+    } finally {
+        smartImportAnalyzeButton.disabled = false;
+    }
+}
+
+async function confirmarImportacaoInteligente() {
+    const registros = coletarPreviewEditado();
+    if (!registros.length) {
+        definirMensagemImportacao("Não há registros válidos para importar.", "error");
+        return;
+    }
+    const data = smartImportDate?.value;
+    const turno = smartImportShift?.value;
+    if (!data || !turno) {
+        definirMensagemImportacao("Informe a data e selecione um turno ou “Geral / não informado” antes de confirmar.", "error");
+        return;
+    }
+    const confirmar = await confirmarAcao(
+        `Confirmar a importação de ${registros.length} registro(s)? Cadastros novos de veículos, motoristas e ajudantes poderão ser criados automaticamente.`,
+        {eyebrow: "IMPORTAÇÃO INTELIGENTE", titulo: "Confirmar registros", confirmarTexto: "Importar dados"}
+    );
+    if (!confirmar) return;
+    smartImportConfirmButton.disabled = true;
+    definirMensagemImportacao("Gravando registros...", "loading");
+    try {
+        const response = await fetch("/importacoes/inteligente/confirmar", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                data,
+                turno,
+                origem: smartImportMode === "image" ? "IMPORTACAO_IA" : smartImportMode === "file" ? "IMPORTACAO_ARQUIVO" : "IMPORTACAO_TEXTO",
+                sobrescrever_manuais: Boolean(smartImportOverwriteManual?.checked),
+                registros
+            })
+        });
+        const resultado = await response.json();
+        if (!response.ok) throw new Error(resultado.detail || "Falha ao importar os registros.");
+        await carregarDados();
+        const totalAlterado = resultado.operacoes_importadas + resultado.operacoes_atualizadas + resultado.manutencoes_importadas + resultado.manutencoes_atualizadas;
+        fecharModalImportacaoOperacao();
+        mostrarToast(`${totalAlterado} registro(s) processado(s). ${resultado.ignorados ? `${resultado.ignorados} requer(em) revisão.` : "Importação concluída."}`, resultado.ignorados ? "warning" : "success");
+    } catch (error) {
+        definirMensagemImportacao(error.message || "Não foi possível concluir a importação.", "error");
+    } finally {
+        smartImportConfirmButton.disabled = false;
+    }
+}
+
+smartImportAnalyzeButton?.addEventListener("click", analisarImportacaoInteligente);
+smartImportConfirmButton?.addEventListener("click", confirmarImportacaoInteligente);
+smartImportBackButton?.addEventListener("click", () => {
+    if (smartImportPreview) smartImportPreview.hidden = true;
+    definirMensagemImportacao("Ajuste a fonte e analise novamente quando estiver pronta.");
+});
 
 
 function abrirModalOperacao() {

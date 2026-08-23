@@ -155,7 +155,7 @@ def executar() -> None:
             models.PanoramaConfiguracao(
                 id=1,
                 unidade="SSP17: SBC",
-                operador="HAWK TRANSPORTES",
+                operador="Operador",
             )
         )
 

@@ -1,39 +1,48 @@
-# Ylume Ops V5 — Panorama operacional + Ajudantes
+# Ylume Ops — V6.1
 
-## Alterações
-- Cadastro completo de ajudantes: nome, CPF, telefone, observação e status.
-- Ajudante opcional vinculado à operação.
-- Exclusão de ajudante sem histórico; com histórico, o cadastro deve ser arquivado.
-- Mantidas as melhorias V4: CPF/CNH de motoristas, tipo de veículo livre, exclusão/arquivamento.
-- Panorama no formato do exemplo operacional enviado.
-- Cabeçalho do panorama configurável (Unidade/Base e Operador/MLP).
-- Panorama gerado agora é editável antes de copiar.
-- Barra de emojis para inserir rapidamente ✅ 🚗 ⏸️ ⚠️ 🛠️ 🚫 📦 🔄.
-- Novo indicador de veículos ociosos no panorama.
-- Script destrutivo opcional `backend/reset_base_20260718.py` para substituir a base pelos dados recebidos.
+Ajuste de segurança e revisão da Importação Inteligente.
 
-## Importante sobre os dados recebidos
-O resumo textual informa 58 veículos, mas as linhas fornecidas contêm 49 placas únicas (40 linhas na seção Frota Fixa + 11 linhas de manutenção, com 2 placas repetidas entre as duas seções). Por isso o reset cadastra 49 veículos; nenhum veículo fictício foi inventado.
+## O que mudou
 
-O resumo informa 6 veículos ociosos, mas as linhas não identificam seis casos de forma inequívoca. O sistema calcula ociosidade a partir dos registros; o texto final pode ser ajustado manualmente no editor do Panorama.
+- Placas repetidas no mesmo lote são consolidadas antes da confirmação.
+- Se uma placa aparecer na frota e também em manutenção, a manutenção é priorizada e a linha fica destacada como conflito para revisão.
+- O exemplo de 18/07/2026 passa de 51 linhas brutas para 49 veículos únicos, mantendo 11 manutenções.
+- TBF2D48 e TBF2C96 ficam destacadas porque aparecem como carregando e também em manutenção no texto-fonte.
+- O campo Turno ganhou `Geral / não informado`.
+- Quando o texto contém uma data, a data lida da fonte é priorizada; a data do formulário é usada como fallback.
+- Linhas com baixa confiança ou conflito recebem destaque visual e aviso `Revisar`/`Conferir`.
+- `Permitir substituir registros criados manualmente` é sempre desmarcado ao abrir/reiniciar a importação.
+- O backend também consolida duplicatas novamente no momento da confirmação, como proteção adicional.
 
-Nenhum ajudante foi nomeado no exemplo fornecido, então a tabela de ajudantes inicia vazia.
+## Arquivos alterados
 
-## Aplicação local
-Substitua os arquivos do pacote no projeto e rode:
+- `backend/main.py`
+- `backend/schemas.py`
+- `frontend/index.html`
+- `frontend/js/app.js`
+- `frontend/css/style.css`
+
+Não há novas dependências nesta versão.
+
+## Como aplicar localmente
+
+Substitua os arquivos correspondentes e execute:
 
 ```powershell
+cd "C:\Users\Ysa Martinho\Documents\hawk-operations"
 docker compose down
 docker compose up -d --build
+Start-Process "http://127.0.0.1:8000"
 ```
 
-## Reset da base local
-Este comando APAGA os dados operacionais atuais. Faça backup antes.
+No navegador, use `Ctrl + F5`.
 
-```powershell
-docker compose exec ylume-ops python -m backend.reset_base_20260718 --confirmar
-```
+## Teste recomendado
 
-Depois recarregue o navegador com `Ctrl + F5`.
-
-Para ver o panorama do exemplo, selecione `18/07/2026` e `Todos os turnos`.
+1. Operação → Importar operação → Colar texto.
+2. Cole o panorama de 18/07/2026.
+3. Use `Geral / não informado`.
+4. Clique em `Analisar dados`.
+5. O esperado é `49 veículos identificados`, `11 manutenção(ões)` e 2 conflitos destacados (TBF2D48 e TBF2C96).
+6. Revise as linhas de baixa confiança antes de confirmar.
+7. Mantenha desmarcada a opção de sobrescrever registros manuais, salvo quando houver intenção explícita de substituir esses dados.

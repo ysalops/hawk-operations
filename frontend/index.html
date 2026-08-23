@@ -6,7 +6,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Ylume Ops</title>
 <link href="/static/assets/logo-ylume-ops.svg" rel="icon" type="image/png"/>
-<link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="/static/css/style.css?v=32" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="/static/css/style.css?v=36" rel="stylesheet"/>
 </head>
 <body class="ylume-orion-ui">
 <!-- =====================================================
@@ -1691,48 +1691,83 @@
          IMPORTAÇÃO INTELIGENTE
          ================================================= -->
 <div class="modal-overlay" id="importOperationModal">
-<div class="modal modal-large">
+<div class="modal modal-large smart-import-modal">
 <div class="modal-header">
 <div>
-<span class="page-eyebrow">YLUME OPS</span>
+<span class="page-eyebrow">IMPORTAÇÃO INTELIGENTE</span>
 <h3>Importar operação</h3>
-<p class="subtitle">
-                        Centralize a entrada de dados em um único fluxo.
-                        Imagens, arquivos e texto poderão ser revisados antes da confirmação.
-                    </p>
+<p class="subtitle">Envie prints, arquivos ou cole um panorama. O Ylume Ops organiza os dados e mostra uma prévia editável antes de gravar.</p>
 </div>
-<button aria-label="Fechar" class="modal-close" id="closeImportOperationModal" type="button">
-                    ×
-                </button>
+<button aria-label="Fechar" class="modal-close" id="closeImportOperationModal" type="button">×</button>
 </div>
-<div class="smart-import-grid">
-<button class="smart-import-option" disabled="" type="button">
-<span class="smart-import-badge">Em preparação</span>
-<i data-lucide="image"></i>
-<strong>Imagem ou print</strong>
-<span>Extração assistida por IA para placa, motorista, rota e status.</span>
-</button>
-<button class="smart-import-option" disabled="" type="button">
-<span class="smart-import-badge">Em preparação</span>
-<i data-lucide="sheet"></i>
-<strong>Excel ou CSV</strong>
-<span>Leitura estruturada para importar vários registros de uma vez.</span>
-</button>
-<button class="smart-import-option" disabled="" type="button">
-<span class="smart-import-badge">Em preparação</span>
-<i data-lucide="clipboard-paste"></i>
-<strong>Colar informações</strong>
-<span>Cole uma tabela ou texto para organizar os registros antes de salvar.</span>
-</button>
+
+<div class="import-ai-status" id="importAiStatus">
+<i data-lucide="sparkles"></i>
+<div><strong>Verificando recursos inteligentes...</strong><span>O sistema também possui leitura local para textos e arquivos estruturados.</span></div>
 </div>
-<div class="form-message">
-                Nenhum dado é salvo sem uma etapa de conferência e confirmação.
-            </div>
+
+<div class="smart-import-tabs" role="tablist">
+<button class="smart-import-tab active" data-import-mode="image" type="button"><i data-lucide="image"></i> Imagem / print</button>
+<button class="smart-import-tab" data-import-mode="text" type="button"><i data-lucide="clipboard-paste"></i> Colar texto</button>
+<button class="smart-import-tab" data-import-mode="file" type="button"><i data-lucide="sheet"></i> Excel / CSV</button>
+</div>
+
+<div class="import-context-grid">
+<div class="form-group"><label for="smartImportDate">Data da operação</label><input id="smartImportDate" type="date"/></div>
+<div class="form-group"><label for="smartImportShift">Turno</label><select id="smartImportShift"><option value="Não informado">Geral / não informado</option><option value="Manhã">Manhã</option><option value="Tarde">Tarde</option><option value="Noite">Noite</option></select><small class="field-help">Use “Geral / não informado” quando a fonte não indicar um turno específico.</small></div>
+</div>
+
+<section class="smart-import-panel active" data-import-panel="image">
+<label class="smart-dropzone" for="smartImportImages">
+<i data-lucide="scan-line"></i>
+<strong>Selecione ou arraste até 4 prints</strong>
+<span>PNG, JPG ou WEBP, até 10 MB por imagem. A IA identifica placa, motorista, rota, status e observações. As imagens são enviadas ao provedor de IA configurado no servidor.</span>
+<input accept="image/png,image/jpeg,image/webp" id="smartImportImages" multiple type="file"/>
+</label>
+<div class="selected-files" id="smartImportImageList"></div>
+</section>
+
+<section class="smart-import-panel" data-import-panel="text">
+<div class="form-group">
+<label for="smartImportText">Cole o panorama, mensagem ou tabela</label>
+<textarea id="smartImportText" rows="11" placeholder="Ex.:\nPANORAMA SSP17: SBC\n18/07/2026\n\nTAS0E26 ✅ 426292126 (Vitória)\nTAS7A15 🚫 pausado...\n\nCARROS EM MANUTENÇÃO.\nTAS1H32 🛠️ colisão"></textarea>
+</div>
+<label class="smart-import-check"><input id="smartImportUseAi" type="checkbox"/> <span>Opcional: usar o provedor de IA quando o texto não puder ser interpretado com segurança pela leitura local.</span></label>
+</section>
+
+<section class="smart-import-panel" data-import-panel="file">
+<label class="smart-dropzone" for="smartImportFiles">
+<i data-lucide="file-spreadsheet"></i>
+<strong>Selecione Excel ou CSV</strong>
+<span>Colunas reconhecidas: placa, motorista, ajudante, rota, status, tipo, motivo e observação.</span>
+<input accept=".csv,.xlsx,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" id="smartImportFiles" multiple type="file"/>
+</label>
+<div class="selected-files" id="smartImportFileList"></div>
+</section>
+
+<div class="form-message" id="smartImportMessage"></div>
+<div class="modal-actions smart-import-analyze-actions">
+<button class="secondary-button" id="cancelImportOperationModal" type="button">Fechar</button>
+<button class="primary-button" id="smartImportAnalyzeButton" type="button"><i data-lucide="sparkles"></i> Analisar dados</button>
+</div>
+
+<section class="smart-import-preview" id="smartImportPreview" hidden>
+<div class="smart-import-preview-head">
+<div><span class="page-eyebrow">PRÉ-VISUALIZAÇÃO</span><h4><span id="smartImportPreviewCount">0</span> veículos identificados</h4><p>O sistema consolida placas repetidas. Linhas destacadas exigem revisão antes da confirmação.</p></div>
+<div class="smart-import-summary" id="smartImportSummary"></div>
+</div>
+<div class="table-wrapper smart-import-table-wrapper">
+<table class="smart-import-table">
+<thead><tr><th>Placa</th><th>Tipo</th><th>Motorista</th><th>Ajudante</th><th>Rota</th><th>Status</th><th>Motivo / observação</th><th>Conf.</th><th></th></tr></thead>
+<tbody id="smartImportPreviewBody"></tbody>
+</table>
+</div>
+<label class="smart-import-check smart-import-overwrite"><input id="smartImportOverwriteManual" type="checkbox"/> <span>Permitir substituir registros criados manualmente para a mesma placa/data/turno.</span></label>
 <div class="modal-actions">
-<button class="secondary-button" id="cancelImportOperationModal" type="button">
-                    Fechar
-                </button>
+<button class="secondary-button" id="smartImportBackButton" type="button">Voltar e ajustar</button>
+<button class="primary-button" id="smartImportConfirmButton" type="button"><i data-lucide="check"></i> Confirmar importação</button>
 </div>
+</section>
 </div>
 </div>
 <div class="modal-overlay" id="operationModal">
@@ -1975,7 +2010,7 @@
          ===================================================== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="/static/js/app.js?v=32"></script>
+<script src="/static/js/app.js?v=36"></script>
 <script>
 
         if (

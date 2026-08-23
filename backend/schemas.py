@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # =====================================================
@@ -322,3 +322,59 @@ class PanoramaConfiguracaoResponse(BaseModel):
     operador: str
     atualizado_em: datetime
     model_config = ConfigDict(from_attributes=True)
+
+
+# =====================================================
+# IMPORTAÇÃO INTELIGENTE V6
+# =====================================================
+
+class ImportacaoInteligenteTextoRequest(BaseModel):
+    texto: str
+    data: date | None = None
+    turno: str | None = None
+    usar_ia: bool = True
+
+
+class ImportacaoInteligenteRegistro(BaseModel):
+    placa: str
+    tipo_registro: str = "OPERACAO"
+    tipo_veiculo: str | None = None
+    motorista: str | None = None
+    ajudante: str | None = None
+    rota_id: str | None = None
+    status: str = "SEM_CLASSIFICACAO"
+    motivo: str | None = None
+    observacao: str | None = None
+    confianca: float | None = Field(default=None, ge=0, le=1)
+    origem_linha: str | None = None
+    alerta: str | None = None
+
+
+class ImportacaoInteligenteAnaliseResponse(BaseModel):
+    metodo: str
+    ia_configurada: bool
+    modelo: str | None = None
+    data: date | None = None
+    turno: str | None = None
+    unidade: str | None = None
+    operador: str | None = None
+    registros: list[ImportacaoInteligenteRegistro]
+    avisos: list[str] = []
+
+
+class ImportacaoInteligenteConfirmarRequest(BaseModel):
+    data: date
+    turno: str
+    origem: str = "IMPORTACAO_INTELIGENTE"
+    sobrescrever_manuais: bool = False
+    registros: list[ImportacaoInteligenteRegistro]
+
+
+class ImportacaoInteligenteConfirmarResponse(BaseModel):
+    recebidos: int
+    operacoes_importadas: int
+    operacoes_atualizadas: int
+    manutencoes_importadas: int
+    manutencoes_atualizadas: int
+    ignorados: int
+    pendencias: list[ImportacaoOperacaoPendencia]
