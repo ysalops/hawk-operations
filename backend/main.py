@@ -3,12 +3,15 @@ import os
 import subprocess
 import sys
 import unicodedata
+import hashlib
+import hmac
 
 from datetime import date, datetime
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -49,6 +52,65 @@ COLETOR_LOG_FILE = (
 
 COLETOR_PROCESSO = None
 
+# AUTENTICAÇÃO
+
+HAWK_ACCESS_PASSWORD = os.getenv(
+    "HAWK_ACCESS_PASSWORD",
+    "",
+).strip()
+
+HAWK_SESSION_SECRET = os.getenv(
+    "HAWK_SESSION_SECRET",
+    "",
+).strip()
+
+SESSION_COOKIE_NAME = "hawk_session"
+SESSION_MAX_AGE = 60 * 60 * 8  # 8 horas
+
+HAWK_COOKIE_SECURE = (
+    os.getenv(
+        "HAWK_COOKIE_SECURE",
+        "true",
+    )
+    .strip()
+    .lower()
+    in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+)
+
+def criar_token_sessao() -> str:
+    if not HAWK_SESSION_SECRET:
+        return ""
+
+    return hmac.new(
+        HAWK_SESSION_SECRET.encode("utf-8"),
+        b"hawk-session-v1",
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def esta_autenticado(request: Request) -> bool:
+    token = request.cookies.get(
+        SESSION_COOKIE_NAME,
+    )
+
+    token_esperado = criar_token_sessao()
+
+    if not token or not token_esperado:
+        return False
+
+    return hmac.compare_digest(
+        token,
+        token_esperado,
+    )
+
+
+class LoginRequest(BaseModel):
+    password: str
 
 # APLICAÇÃO
 
@@ -61,6 +123,40 @@ app = FastAPI(
     version="0.2.0",
 )
 
+@app.middleware("http")
+async def proteger_hawk(
+    request: Request,
+    call_next,
+):
+    caminho = request.url.path
+
+    rotas_publicas = {
+        "/login",
+        "/auth/login",
+        "/health",
+    }
+
+    if (
+        caminho in rotas_publicas
+        or caminho.startswith("/static/")
+    ):
+        return await call_next(request)
+
+    if esta_autenticado(request):
+        return await call_next(request)
+
+    if request.method == "GET":
+        return RedirectResponse(
+            url="/login",
+            status_code=303,
+        )
+
+    return JSONResponse(
+        status_code=401,
+        content={
+            "detail": "Sessão não autenticada.",
+        },
+    )
 
 # ARQUIVOS ESTÁTICOS
 
@@ -73,9 +169,93 @@ app.mount(
 
 # HOME / HEALTH
 
+@app.get(
+    "/login",
+    include_in_schema=False,
+)
+def login_page(
+    request: Request,
+):
+    if esta_autenticado(request):
+        return RedirectResponse(
+            url="/",
+            status_code=303,
+        )
+
+    return FileResponse(
+        FRONTEND_DIR / "login.html"
+    )
+
+
+@app.post(
+    "/auth/login",
+    include_in_schema=False,
+)
+def login(
+    dados: LoginRequest,
+):
+    if (
+        not HAWK_ACCESS_PASSWORD
+        or not HAWK_SESSION_SECRET
+    ):
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Autenticação do Hawk "
+                "não foi configurada."
+            ),
+        )
+
+    if not hmac.compare_digest(
+        dados.password,
+        HAWK_ACCESS_PASSWORD,
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Senha inválida.",
+        )
+
+    response = JSONResponse(
+        content={
+            "authenticated": True,
+        },
+    )
+
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=criar_token_sessao(),
+        max_age=SESSION_MAX_AGE,
+        httponly=True,
+        secure=HAWK_COOKIE_SECURE,
+        samesite="lax",
+    )
+
+    return response
+
+
+@app.post(
+    "/auth/logout",
+    include_in_schema=False,
+)
+def logout():
+    response = JSONResponse(
+        content={
+            "authenticated": False,
+        },
+    )
+
+    response.delete_cookie(
+        SESSION_COOKIE_NAME,
+    )
+
+    return response
+
+
 @app.get("/", include_in_schema=False)
 def home():
-    return FileResponse(FRONTEND_DIR / "index.html")
+    return FileResponse(
+        FRONTEND_DIR / "index.html"
+    )
 
 
 @app.get("/health")

@@ -72,6 +72,9 @@ const menuOperations =
 const menuPanorama =
     document.getElementById("menuPanorama");
 
+const logoutButton =
+    document.getElementById("logout-button");
+
 const dashboardView =
     document.getElementById("dashboardView");
 
@@ -4361,6 +4364,31 @@ menuPanorama?.addEventListener(
 
     }
 
+);
+
+// SAIR
+
+logoutButton?.addEventListener(
+    "click",
+    async () => {
+
+        try {
+
+            await fetch(
+                "/auth/logout",
+                {
+                    method: "POST"
+                }
+            );
+
+        } finally {
+
+            window.location.href =
+                "/login";
+
+        }
+
+    }
 );
 
 // BUSCAS E FILTROS
