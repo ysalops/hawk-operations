@@ -1,15 +1,12 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: hawk-postgres
+    container_name: ylume-ops-postgres
 
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-
-    ports:
-      - "5432:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -24,15 +21,15 @@ services:
 
     restart: unless-stopped
 
-  hawk:
-    container_name: hawk-operations
+  ylume-ops:
+    container_name: ylume-ops
 
     build:
       context: .
       dockerfile: Dockerfile
 
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
 
     volumes:
       - ./database:/app/database
@@ -40,9 +37,9 @@ services:
     environment:
       TZ: America/Sao_Paulo
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      HAWK_ACCESS_PASSWORD: ${HAWK_ACCESS_PASSWORD}
-      HAWK_SESSION_SECRET: ${HAWK_SESSION_SECRET}
-      HAWK_COOKIE_SECURE: ${HAWK_COOKIE_SECURE:-false}
+      YLUME_OPS_ACCESS_PASSWORD: ${YLUME_OPS_ACCESS_PASSWORD}
+      YLUME_OPS_SESSION_SECRET: ${YLUME_OPS_SESSION_SECRET}
+      YLUME_OPS_COOKIE_SECURE: ${YLUME_OPS_COOKIE_SECURE:-true}
 
     depends_on:
       postgres:

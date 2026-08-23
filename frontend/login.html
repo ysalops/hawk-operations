@@ -2,250 +2,173 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Hawk Operations | Acesso</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f6f7fb">
+    <title>Ylume Ops | Acesso</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #f6f7fb;
+            --surface: #ffffff;
+            --text: #1d1a24;
+            --soft: #6f6878;
+            --muted: #918a9a;
+            --accent: #8657dd;
+            --accent-dark: #6240af;
+            --border: #e6e1eb;
+            --danger: #bf4557;
         }
-
         body {
             margin: 0;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: Inter, Arial, sans-serif;
-            background:
-                radial-gradient(
-                    circle at top,
-                    #1d2733 0%,
-                    #10161d 45%,
-                    #090d12 100%
-                );
-            color: #ffffff;
-        }
-
-        .login-card {
-            width: min(390px, calc(100% - 32px));
-            padding: 42px 38px;
-            background: rgba(18, 25, 33, 0.94);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            box-shadow:
-                0 30px 80px rgba(0, 0, 0, 0.45);
-        }
-
-        .brand {
-            margin-bottom: 34px;
-            text-align: center;
-        }
-
-        .brand-mark {
-            width: 54px;
-            height: 54px;
             display: grid;
             place-items: center;
-            margin: 0 auto 16px;
-            border-radius: 14px;
-            background: #ffffff;
-            color: #111820;
-            font-size: 24px;
-            font-weight: 800;
+            padding: 28px;
+            font-family: "Inter", Arial, sans-serif;
+            background:
+                radial-gradient(circle at 78% 14%, rgba(134,87,221,.10), transparent 24%),
+                radial-gradient(circle at 16% 88%, rgba(167,117,238,.07), transparent 25%),
+                var(--bg);
+            color: var(--text);
         }
-
-        .brand h1 {
-            margin: 0;
-            font-size: 22px;
-            letter-spacing: 0.08em;
+        .login-shell {
+            width: min(940px, 100%);
+            min-height: 540px;
+            display: grid;
+            grid-template-columns: 1.08fr .92fr;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 26px;
+            background: rgba(255,255,255,.95);
+            box-shadow: 0 35px 90px rgba(40,31,55,.13);
         }
-
-        .brand p {
-            margin: 8px 0 0;
-            color: #8f9cab;
-            font-size: 13px;
+        .login-intro {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 46px;
+            overflow: hidden;
+            border-right: 1px solid var(--border);
+            background:
+                radial-gradient(circle at 28% 18%, rgba(167,117,238,.16), transparent 30%),
+                linear-gradient(145deg, #ffffff, #f7f2fd);
         }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #bcc6d1;
-            font-size: 13px;
+        .login-intro::after {
+            content: "";
+            position: absolute;
+            right: -100px;
+            bottom: -100px;
+            width: 330px;
+            height: 330px;
+            border: 1px solid rgba(134,87,221,.13);
+            border-radius: 50%;
+            box-shadow: 0 0 0 38px rgba(134,87,221,.035), 0 0 0 78px rgba(134,87,221,.02);
         }
-
+        .brand { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; }
+        .brand-mark {
+            width: 48px; height: 48px; display: grid; place-items: center;
+            border: 1px solid #d9cbed; border-radius: 15px;
+            background: linear-gradient(145deg,#fff,#f2ebfb);
+            box-shadow: 0 8px 22px rgba(75,50,110,.10);
+        }
+        .brand-mark img { width: 33px; height: 33px; object-fit: contain; }
+        .brand-text strong { display: block; font-size: .92rem; font-weight: 650; letter-spacing: .17em; }
+        .brand-text span { display: block; margin-top: 7px; color: var(--accent); font-size: .52rem; font-weight: 650; letter-spacing: .28em; }
+        .intro-copy { position: relative; z-index: 1; max-width: 450px; }
+        .intro-copy .eyebrow { margin-bottom: 12px; color: var(--accent); font-size: .58rem; font-weight: 700; letter-spacing: .17em; }
+        .intro-copy h1 { margin: 0; max-width: 420px; font-size: clamp(2.2rem,5vw,3.5rem); font-weight: 350; line-height: 1.05; letter-spacing: -.055em; }
+        .intro-copy p { margin: 18px 0 0; max-width: 390px; color: var(--soft); font-size: .78rem; line-height: 1.75; }
+        .intro-foot { position: relative; z-index: 1; color: var(--muted); font-size: .6rem; letter-spacing: .05em; }
+        .login-panel { display: flex; align-items: center; padding: 54px 48px; }
+        .login-card { width: 100%; }
+        .login-card .kicker { color: var(--accent); font-size: .57rem; font-weight: 700; letter-spacing: .16em; }
+        .login-card h2 { margin: 9px 0 8px; font-size: 1.55rem; font-weight: 450; letter-spacing: -.03em; }
+        .login-card .hint { margin: 0 0 28px; color: var(--muted); font-size: .7rem; line-height: 1.6; }
+        label { display: block; margin-bottom: 8px; color: var(--soft); font-size: .66rem; font-weight: 550; }
         input {
-            width: 100%;
-            height: 48px;
-            padding: 0 15px;
-            border: 1px solid #303b47;
-            border-radius: 10px;
-            outline: none;
-            background: #0e141b;
-            color: white;
-            font-size: 15px;
-            transition: 0.2s ease;
+            width: 100%; height: 48px; padding: 0 14px;
+            border: 1px solid #dcd6e5; border-radius: 11px; outline: none;
+            background: #fff; color: var(--text); font-size: .84rem; transition: .2s ease;
         }
-
-        input:focus {
-            border-color: #7b8794;
-            box-shadow:
-                0 0 0 3px rgba(255, 255, 255, 0.04);
-        }
-
+        input:focus { border-color: #b99ee2; box-shadow: 0 0 0 3px rgba(134,87,221,.08); }
         button {
-            width: 100%;
-            height: 48px;
-            margin-top: 18px;
-            border: 0;
-            border-radius: 10px;
-            cursor: pointer;
-            background: #ffffff;
-            color: #10161d;
-            font-weight: 700;
-            font-size: 14px;
-            transition: 0.2s ease;
+            width: 100%; height: 46px; margin-top: 17px;
+            border: 1px solid #784cc6; border-radius: 11px; cursor: pointer;
+            background: linear-gradient(145deg,#9567e4,#7448c7);
+            box-shadow: 0 12px 28px rgba(98,64,175,.18);
+            color: #fff; font-size: .7rem; font-weight: 650; transition: .2s ease;
         }
-
-        button:hover {
-            transform: translateY(-1px);
-            background: #e7ebef;
-        }
-
-        button:disabled {
-            cursor: wait;
-            opacity: 0.65;
-            transform: none;
-        }
-
-        .error {
-            min-height: 20px;
-            margin-top: 14px;
-            color: #ff8d8d;
-            text-align: center;
-            font-size: 13px;
-        }
-
-        .footer {
-            margin-top: 28px;
-            color: #66727e;
-            text-align: center;
-            font-size: 11px;
-            letter-spacing: 0.04em;
+        button:hover { transform: translateY(-1px); box-shadow: 0 16px 34px rgba(98,64,175,.23); }
+        button:disabled { cursor: wait; opacity: .65; transform: none; }
+        .error { min-height: 20px; margin-top: 13px; color: var(--danger); text-align: center; font-size: .66rem; }
+        .access-note { margin-top: 27px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: .59rem; text-align: center; letter-spacing: .05em; }
+        @media (max-width: 760px) {
+            .login-shell { grid-template-columns: 1fr; min-height: auto; }
+            .login-intro { min-height: 310px; padding: 34px; border-right: 0; border-bottom: 1px solid var(--border); }
+            .login-panel { padding: 38px 30px; }
+            .intro-copy h1 { font-size: 2.5rem; }
         }
     </style>
 </head>
-
 <body>
-    <main class="login-card">
-
-        <div class="brand">
-            <div class="brand-mark">H</div>
-
-            <h1>HAWK OPERATIONS</h1>
-
-            <p>
-                Gestão operacional de frota
-            </p>
-        </div>
-
-        <form id="login-form">
-
-            <label for="password">
-                Senha de acesso
-            </label>
-
-            <input
-                id="password"
-                type="password"
-                autocomplete="current-password"
-                autofocus
-                required
-            >
-
-            <button
-                id="login-button"
-                type="submit"
-            >
-                ENTRAR
-            </button>
-
-            <div
-                id="error-message"
-                class="error"
-            ></div>
-
-        </form>
-
-        <div class="footer">
-            ACESSO RESTRITO · HAWK TRANSPORTES
-        </div>
-
+    <main class="login-shell">
+        <section class="login-intro">
+            <div class="brand">
+                <div class="brand-mark"><img src="/static/assets/logo-ylume-ops.svg" alt="Ylume Ops"></div>
+                <div class="brand-text"><strong>YLUME</strong><span>OPS</span></div>
+            </div>
+            <div class="intro-copy">
+                <div class="eyebrow">GESTÃO OPERACIONAL</div>
+                <h1>Operação clara, organizada e inteligente.</h1>
+                <p>Centralize frota, motoristas, manutenções e registros operacionais em um único ambiente.</p>
+            </div>
+            <div class="intro-foot">YLUME OPS · AMBIENTE RESTRITO</div>
+        </section>
+        <section class="login-panel">
+            <div class="login-card">
+                <div class="kicker">ACESSO</div>
+                <h2>Entrar no Ylume Ops</h2>
+                <p class="hint">Informe sua senha para acessar o ambiente operacional.</p>
+                <form id="login-form">
+                    <label for="password">Senha de acesso</label>
+                    <input id="password" type="password" autocomplete="current-password" autofocus required>
+                    <button id="login-button" type="submit">ENTRAR</button>
+                    <div id="error-message" class="error"></div>
+                </form>
+                <div class="access-note">ACESSO RESTRITO · YLUME OPS</div>
+            </div>
+        </section>
     </main>
-
     <script>
-        const form =
-            document.getElementById("login-form");
-
-        const password =
-            document.getElementById("password");
-
-        const button =
-            document.getElementById("login-button");
-
-        const errorMessage =
-            document.getElementById("error-message");
-
-        form.addEventListener(
-            "submit",
-            async (event) => {
-                event.preventDefault();
-
-                errorMessage.textContent = "";
-                button.disabled = true;
-                button.textContent = "ENTRANDO...";
-
-                try {
-                    const response = await fetch(
-                        "/auth/login",
-                        {
-                            method: "POST",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json",
-                            },
-
-                            body: JSON.stringify({
-                                password:
-                                    password.value,
-                            }),
-                        },
-                    );
-
-                    if (!response.ok) {
-                        throw new Error();
-                    }
-
-                    window.location.href = "/";
-
-                } catch {
-                    errorMessage.textContent =
-                        "Senha inválida. Tente novamente.";
-
-                    password.select();
-
-                } finally {
-                    button.disabled = false;
-                    button.textContent = "ENTRAR";
-                }
-            },
-        );
+        const form = document.getElementById("login-form");
+        const password = document.getElementById("password");
+        const button = document.getElementById("login-button");
+        const errorMessage = document.getElementById("error-message");
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            errorMessage.textContent = "";
+            button.disabled = true;
+            button.textContent = "ENTRANDO...";
+            try {
+                const response = await fetch("/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ password: password.value }),
+                });
+                if (!response.ok) throw new Error();
+                window.location.href = "/";
+            } catch {
+                errorMessage.textContent = "Senha inválida. Tente novamente.";
+                password.select();
+            } finally {
+                button.disabled = false;
+                button.textContent = "ENTRAR";
+            }
+        });
     </script>
 </body>
 </html>

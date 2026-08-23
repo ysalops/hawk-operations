@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATABASE_PATH = (
     BASE_DIR
     / "database"
-    / "hawk_operations.db"
+    / "ylume_ops.db"
 )
 
 DEFAULT_DATABASE_URL = (

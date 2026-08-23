@@ -10,7 +10,7 @@ from backend.database import Base
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SQLITE_PATH = BASE_DIR / "database" / "hawk_operations.db"
+SQLITE_PATH = BASE_DIR / "database" / "ylume_ops.db"
 SQLITE_URL = f"sqlite:///{SQLITE_PATH.as_posix()}"
 
 POSTGRES_URL = os.getenv("POSTGRES_URL")

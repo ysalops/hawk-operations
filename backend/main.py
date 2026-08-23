@@ -1,7 +1,4 @@
-import json
 import os
-import subprocess
-import sys
 import unicodedata
 import hashlib
 import hmac
@@ -13,7 +10,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import or_, select
+from sqlalchemy import inspect, or_, select, text
 from sqlalchemy.orm import Session
 
 from backend import models, schemas
@@ -25,51 +22,86 @@ from backend.database import Base, engine, get_db
 Base.metadata.create_all(bind=engine)
 
 
+def aplicar_migracoes_leves() -> None:
+    """Adiciona campos opcionais sem apagar dados existentes."""
+    inspetor = inspect(engine)
+
+    if "motoristas" not in inspetor.get_table_names():
+        return
+
+    colunas = {
+        coluna["name"]
+        for coluna in inspetor.get_columns("motoristas")
+    }
+
+    alteracoes = {
+        "cpf": "VARCHAR(11)",
+        "cnh": "VARCHAR(30)",
+        "categoria_cnh": "VARCHAR(10)",
+        "validade_cnh": "DATE",
+    }
+
+    with engine.begin() as conexao:
+        for nome_coluna, tipo_sql in alteracoes.items():
+            if nome_coluna not in colunas:
+                conexao.execute(
+                    text(
+                        f"ALTER TABLE motoristas ADD COLUMN {nome_coluna} {tipo_sql}"
+                    )
+                )
+
+        conexao.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS "
+                "ux_motoristas_cpf ON motoristas (cpf)"
+            )
+        )
+
+    inspetor = inspect(engine)
+    if "operacoes" in inspetor.get_table_names():
+        colunas_operacoes = {
+            coluna["name"]
+            for coluna in inspetor.get_columns("operacoes")
+        }
+        with engine.begin() as conexao:
+            if "ajudante_id" not in colunas_operacoes:
+                conexao.execute(
+                    text("ALTER TABLE operacoes ADD COLUMN ajudante_id INTEGER")
+                )
+            conexao.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS "
+                    "ix_operacoes_ajudante_id ON operacoes (ajudante_id)"
+                )
+            )
+
+
+aplicar_migracoes_leves()
+
+
 # CAMINHOS
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
 
-AUTOMATION_DIR = BASE_DIR / "automation"
-
-COLETOR_SCRIPT = (
-    AUTOMATION_DIR
-    / "coletor_ml.py"
-)
-
-COLETOR_STATUS_FILE = (
-    AUTOMATION_DIR
-    / "coletor_status.json"
-)
-
-COLETOR_LOG_FILE = (
-    AUTOMATION_DIR
-    / "coletor_execucao.log"
-)
-
-
-# Guarda o processo do coletor enquanto o servidor estiver rodando.
-
-COLETOR_PROCESSO = None
-
 # AUTENTICAÇÃO
 
-HAWK_ACCESS_PASSWORD = os.getenv(
-    "HAWK_ACCESS_PASSWORD",
+YLUME_OPS_ACCESS_PASSWORD = os.getenv(
+    "YLUME_OPS_ACCESS_PASSWORD",
     "",
 ).strip()
 
-HAWK_SESSION_SECRET = os.getenv(
-    "HAWK_SESSION_SECRET",
+YLUME_OPS_SESSION_SECRET = os.getenv(
+    "YLUME_OPS_SESSION_SECRET",
     "",
 ).strip()
 
-SESSION_COOKIE_NAME = "hawk_session"
+SESSION_COOKIE_NAME = "ylume_ops_session"
 SESSION_MAX_AGE = 60 * 60 * 8  # 8 horas
 
-HAWK_COOKIE_SECURE = (
+YLUME_OPS_COOKIE_SECURE = (
     os.getenv(
-        "HAWK_COOKIE_SECURE",
+        "YLUME_OPS_COOKIE_SECURE",
         "true",
     )
     .strip()
@@ -83,12 +115,12 @@ HAWK_COOKIE_SECURE = (
 )
 
 def criar_token_sessao() -> str:
-    if not HAWK_SESSION_SECRET:
+    if not YLUME_OPS_SESSION_SECRET:
         return ""
 
     return hmac.new(
-        HAWK_SESSION_SECRET.encode("utf-8"),
-        b"hawk-session-v1",
+        YLUME_OPS_SESSION_SECRET.encode("utf-8"),
+        b"ylume-ops-session-v1",
         hashlib.sha256,
     ).hexdigest()
 
@@ -115,16 +147,16 @@ class LoginRequest(BaseModel):
 # APLICAÇÃO
 
 app = FastAPI(
-    title="Hawk Operations API",
+    title="Ylume Ops API",
     description=(
-        "API para gestão operacional de frota, motoristas, "
-        "manutenções e rotas."
+        "API para gestão operacional de frota, motoristas, ajudantes, "
+        "manutenções, panoramas e rotas."
     ),
-    version="0.2.0",
+    version="0.3.0",
 )
 
 @app.middleware("http")
-async def proteger_hawk(
+async def proteger_ylume_ops(
     request: Request,
     call_next,
 ):
@@ -195,20 +227,20 @@ def login(
     dados: LoginRequest,
 ):
     if (
-        not HAWK_ACCESS_PASSWORD
-        or not HAWK_SESSION_SECRET
+        not YLUME_OPS_ACCESS_PASSWORD
+        or not YLUME_OPS_SESSION_SECRET
     ):
         raise HTTPException(
             status_code=503,
             detail=(
-                "Autenticação do Hawk "
+                "Autenticação do Ylume Ops "
                 "não foi configurada."
             ),
         )
 
     if not hmac.compare_digest(
         dados.password,
-        HAWK_ACCESS_PASSWORD,
+        YLUME_OPS_ACCESS_PASSWORD,
     ):
         raise HTTPException(
             status_code=401,
@@ -226,7 +258,7 @@ def login(
         value=criar_token_sessao(),
         max_age=SESSION_MAX_AGE,
         httponly=True,
-        secure=HAWK_COOKIE_SECURE,
+        secure=YLUME_OPS_COOKIE_SECURE,
         samesite="lax",
     )
 
@@ -271,6 +303,43 @@ def limpar_texto_opcional(valor: str | None) -> str | None:
 
     valor_limpo = valor.strip()
     return valor_limpo or None
+
+
+def normalizar_cpf(valor: str | None) -> str | None:
+    if valor is None:
+        return None
+
+    cpf = "".join(
+        caractere
+        for caractere in valor
+        if caractere.isdigit()
+    )
+
+    if not cpf:
+        return None
+
+    if len(cpf) != 11 or len(set(cpf)) == 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Informe um CPF válido com 11 dígitos.",
+        )
+
+    for tamanho in (9, 10):
+        soma = sum(
+            int(cpf[indice]) * (tamanho + 1 - indice)
+            for indice in range(tamanho)
+        )
+        digito = (soma * 10) % 11
+        if digito == 10:
+            digito = 0
+
+        if digito != int(cpf[tamanho]):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Informe um CPF válido.",
+            )
+
+    return cpf
 
 
 def criar_chave_busca(valor: str | None) -> str | None:
@@ -756,9 +825,27 @@ def cadastrar_motorista(
             detail="Informe o nome do motorista.",
         )
 
+    cpf_normalizado = normalizar_cpf(motorista.cpf)
+
+    if cpf_normalizado:
+        cpf_em_uso = db.scalar(
+            select(models.Motorista)
+            .where(models.Motorista.cpf == cpf_normalizado)
+        )
+
+        if cpf_em_uso:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Já existe um motorista cadastrado com este CPF.",
+            )
+
     novo_motorista = models.Motorista(
         nome=nome_normalizado,
+        cpf=cpf_normalizado,
         telefone=limpar_texto_opcional(motorista.telefone),
+        cnh=limpar_texto_opcional(motorista.cnh),
+        categoria_cnh=limpar_texto_opcional(motorista.categoria_cnh),
+        validade_cnh=motorista.validade_cnh,
         observacao=limpar_texto_opcional(motorista.observacao),
         ativo=motorista.ativo,
     )
@@ -799,8 +886,37 @@ def atualizar_motorista(
 
         motorista.nome = dados.nome.strip()
 
+    if "cpf" in campos_enviados:
+        cpf_normalizado = normalizar_cpf(dados.cpf)
+
+        if cpf_normalizado:
+            cpf_em_uso = db.scalar(
+                select(models.Motorista)
+                .where(
+                    models.Motorista.cpf == cpf_normalizado,
+                    models.Motorista.id != motorista_id,
+                )
+            )
+
+            if cpf_em_uso:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Já existe outro motorista cadastrado com este CPF.",
+                )
+
+        motorista.cpf = cpf_normalizado
+
     if "telefone" in campos_enviados:
         motorista.telefone = limpar_texto_opcional(dados.telefone)
+
+    if "cnh" in campos_enviados:
+        motorista.cnh = limpar_texto_opcional(dados.cnh)
+
+    if "categoria_cnh" in campos_enviados:
+        motorista.categoria_cnh = limpar_texto_opcional(dados.categoria_cnh)
+
+    if "validade_cnh" in campos_enviados:
+        motorista.validade_cnh = dados.validade_cnh
 
     if "observacao" in campos_enviados:
         motorista.observacao = limpar_texto_opcional(dados.observacao)
@@ -884,6 +1000,135 @@ def excluir_motorista(
     return None
 
 
+# AJUDANTES
+
+@app.get(
+    "/ajudantes",
+    response_model=list[schemas.AjudanteResponse],
+    tags=["Ajudantes"],
+)
+def listar_ajudantes(db: Session = Depends(get_db)):
+    return db.scalars(
+        select(models.Ajudante).order_by(models.Ajudante.nome)
+    ).all()
+
+
+@app.post(
+    "/ajudantes",
+    response_model=schemas.AjudanteResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Ajudantes"],
+)
+def cadastrar_ajudante(
+    ajudante: schemas.AjudanteCreate,
+    db: Session = Depends(get_db),
+):
+    nome = ajudante.nome.strip()
+    if not nome:
+        raise HTTPException(status_code=400, detail="Informe o nome do ajudante.")
+
+    cpf = normalizar_cpf(ajudante.cpf)
+    if cpf and db.scalar(
+        select(models.Ajudante).where(models.Ajudante.cpf == cpf)
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Já existe um ajudante cadastrado com este CPF.",
+        )
+
+    novo = models.Ajudante(
+        nome=nome,
+        cpf=cpf,
+        telefone=limpar_texto_opcional(ajudante.telefone),
+        observacao=limpar_texto_opcional(ajudante.observacao),
+        ativo=ajudante.ativo,
+    )
+    db.add(novo)
+    db.commit()
+    db.refresh(novo)
+    return novo
+
+
+@app.patch(
+    "/ajudantes/{ajudante_id}",
+    response_model=schemas.AjudanteResponse,
+    tags=["Ajudantes"],
+)
+def atualizar_ajudante(
+    ajudante_id: int,
+    dados: schemas.AjudanteUpdate,
+    db: Session = Depends(get_db),
+):
+    ajudante = db.get(models.Ajudante, ajudante_id)
+    if not ajudante:
+        raise HTTPException(status_code=404, detail="Ajudante não encontrado.")
+
+    campos = dados.model_fields_set
+    if "nome" in campos:
+        if dados.nome is None or not dados.nome.strip():
+            raise HTTPException(status_code=400, detail="O nome não pode ficar vazio.")
+        ajudante.nome = dados.nome.strip()
+
+    if "cpf" in campos:
+        cpf = normalizar_cpf(dados.cpf)
+        if cpf and not cpf_valido(cpf):
+            raise HTTPException(status_code=400, detail="CPF inválido.")
+        if cpf and db.scalar(
+            select(models.Ajudante).where(
+                models.Ajudante.cpf == cpf,
+                models.Ajudante.id != ajudante_id,
+            )
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="Já existe outro ajudante cadastrado com este CPF.",
+            )
+        ajudante.cpf = cpf
+
+    if "telefone" in campos:
+        ajudante.telefone = limpar_texto_opcional(dados.telefone)
+    if "observacao" in campos:
+        ajudante.observacao = limpar_texto_opcional(dados.observacao)
+    if "ativo" in campos:
+        ajudante.ativo = dados.ativo
+
+    db.commit()
+    db.refresh(ajudante)
+    return ajudante
+
+
+@app.delete(
+    "/ajudantes/{ajudante_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["Ajudantes"],
+)
+def excluir_ajudante(
+    ajudante_id: int,
+    db: Session = Depends(get_db),
+):
+    ajudante = db.get(models.Ajudante, ajudante_id)
+    if not ajudante:
+        raise HTTPException(status_code=404, detail="Ajudante não encontrado.")
+
+    possui_historico = db.scalar(
+        select(models.Operacao.id)
+        .where(models.Operacao.ajudante_id == ajudante_id)
+        .limit(1)
+    )
+    if possui_historico:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Este ajudante possui histórico e não pode ser excluído. "
+                "Arquive o cadastro para preservar os registros."
+            ),
+        )
+
+    db.delete(ajudante)
+    db.commit()
+    return None
+
+
 # OPERAÇÕES
 
 STATUS_OPERACAO = {
@@ -894,13 +1139,14 @@ STATUS_OPERACAO = {
     "RETORNANDO_ESTACAO",
     "AMBULANCIA",
 
-    # STATUS MANUAIS DO HAWK
+    # STATUS MANUAIS DA OPERAÇÃO
     "RESERVA_CARREGANDO",
     "FOLGA",
     "IMPEDIDO",
     "SEM_CARGA",
     "OUTRO_SERVICE",
     "INDISPONIVEL_MOTORISTA",
+    "SEM_CLASSIFICACAO",
 }
 
 
@@ -951,6 +1197,15 @@ def cadastrar_operacao(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Status de operação inválido.",
         )
+
+    ajudante_id = None
+    if operacao.ajudante_id is not None:
+        ajudante = db.get(models.Ajudante, operacao.ajudante_id)
+        if not ajudante:
+            raise HTTPException(status_code=404, detail="Ajudante não encontrado.")
+        if not ajudante.ativo:
+            raise HTTPException(status_code=409, detail="Este ajudante está inativo.")
+        ajudante_id = ajudante.id
 
     if operacao.veiculo_id is not None:
         veiculo = db.get(models.Veiculo, operacao.veiculo_id)
@@ -1018,6 +1273,7 @@ def cadastrar_operacao(
         turno=turno_normalizado,
         veiculo_id=operacao.veiculo_id,
         motorista_id=operacao.motorista_id,
+        ajudante_id=ajudante_id,
         rota_id=limpar_texto_opcional(operacao.rota_id),
         status=status_normalizado,
         observacao=limpar_texto_opcional(operacao.observacao),
@@ -1114,6 +1370,17 @@ def atualizar_operacao(
 
             operacao.motorista_id = dados.motorista_id
 
+    if "ajudante_id" in campos_enviados:
+        if dados.ajudante_id is None:
+            operacao.ajudante_id = None
+        else:
+            ajudante = db.get(models.Ajudante, dados.ajudante_id)
+            if not ajudante:
+                raise HTTPException(status_code=404, detail="Ajudante não encontrado.")
+            if not ajudante.ativo:
+                raise HTTPException(status_code=409, detail="Este ajudante está inativo.")
+            operacao.ajudante_id = dados.ajudante_id
+
     if "rota_id" in campos_enviados:
         operacao.rota_id = limpar_texto_opcional(dados.rota_id)
 
@@ -1182,377 +1449,29 @@ def excluir_operacao(
 
     return None
 
-# COLETA AUTOMÁTICA
-
-# INICIAR COLETOR
+# IMPORTAÇÃO ASSISTIDA
 
 @app.post(
-    "/coleta/iniciar",
-    status_code=status.HTTP_202_ACCEPTED,
-    tags=["Coleta"],
+    "/importacoes/operacao",
+    response_model=schemas.ImportacaoOperacaoResponse,
+    tags=["Importações"],
 )
-def iniciar_coletor(
-    turno: str,
-    data_operacao: date | None = None,
-):
-
-    global COLETOR_PROCESSO
-
-
-
-    # VERIFICAR SE JÁ EXISTE UM COLETOR RODANDO
-
-
-    if (
-        COLETOR_PROCESSO is not None
-        and
-        COLETOR_PROCESSO.poll() is None
-    ):
-
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                "Já existe uma sincronização "
-                "em andamento."
-            ),
-        )
-
-
-
-    # VALIDAR TURNO
-
-
-    mapa_turnos = {
-
-        "manhã":
-            "Manhã",
-
-        "manha":
-            "Manhã",
-
-        "tarde":
-            "Tarde",
-
-        "noite":
-            "Noite",
-
-    }
-
-
-    turno_normalizado = (
-
-        mapa_turnos.get(
-            turno
-            .strip()
-            .casefold()
-        )
-
-    )
-
-
-    if not turno_normalizado:
-
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Turno inválido. "
-                "Use Manhã, Tarde ou Noite."
-            ),
-        )
-
-
-
-    # DATA DA OPERAÇÃO
-
-
-    data_coleta = (
-
-        data_operacao
-
-        or
-
-        date.today()
-
-    )
-
-
-
-    # VERIFICAR SCRIPT
-
-
-    if not COLETOR_SCRIPT.exists():
-
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=(
-                "O arquivo automation/coletor_ml.py "
-                "não foi encontrado."
-            ),
-        )
-
-
-
-    # STATUS INICIAL
-
-
-    status_inicial = {
-
-        "status":
-            "SOLICITADO",
-
-        "mensagem":
-            "Iniciando sincronização.",
-
-        "turno":
-            turno_normalizado,
-
-        "data":
-            data_coleta.isoformat(),
-
-        "atualizado_em":
-            datetime.now().isoformat(
-                timespec="seconds"
-            ),
-
-    }
-
-
-    COLETOR_STATUS_FILE.write_text(
-
-        json.dumps(
-            status_inicial,
-            indent=4,
-            ensure_ascii=False,
-        ),
-
-        encoding=
-            "utf-8",
-
-    )
-
-
-
-    # COMANDO DO COLETOR
-
-
-    comando = [
-
-        sys.executable,
-
-        str(
-            COLETOR_SCRIPT
-        ),
-
-        "--automatico",
-
-        "--turno",
-        turno_normalizado,
-
-        "--data",
-        data_coleta.isoformat(),
-
-    ]
-
-
-
-    # CONFIGURAÇÃO DO PROCESSO
-
-
-    ambiente = (
-        os.environ.copy()
-    )
-
-
-    ambiente[
-        "PYTHONIOENCODING"
-    ] = "utf-8"
-
-
-
-    # INICIAR COLETOR
-
-
-    try:
-
-        with COLETOR_LOG_FILE.open(
-
-            "a",
-
-            encoding=
-                "utf-8",
-
-        ) as arquivo_log:
-
-
-            COLETOR_PROCESSO = (
-
-                subprocess.Popen(
-
-                    comando,
-
-                    cwd=
-                        str(
-                            BASE_DIR
-                        ),
-
-                    stdout=
-                        arquivo_log,
-
-                    stderr=
-                        subprocess.STDOUT,
-
-                    env=
-                        ambiente,
-
-                )
-
-            )
-
-
-    except Exception as error:
-
-        COLETOR_PROCESSO = None
-
-
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=(
-                "Não foi possível iniciar "
-                f"o coletor: {error}"
-            ),
-        )
-
-
-    return {
-
-        "status":
-            "INICIADO",
-
-        "mensagem":
-            (
-                "O coletor foi iniciado. "
-                "O navegador deverá abrir automaticamente."
-            ),
-
-        "turno":
-            turno_normalizado,
-
-        "data":
-            data_coleta,
-
-    }
-
-
-# STATUS DO COLETOR
-
-@app.get(
-    "/coleta/status",
-    tags=["Coleta"],
-)
-def obter_status_coletor():
-
-    processo_ativo = (
-
-        COLETOR_PROCESSO is not None
-
-        and
-
-        COLETOR_PROCESSO.poll() is None
-
-    )
-
-
-
-    # AINDA NÃO EXISTE STATUS
-
-
-    if not COLETOR_STATUS_FILE.exists():
-
-        return {
-
-            "status":
-                "PARADO",
-
-            "mensagem":
-                (
-                    "Nenhuma sincronização "
-                    "foi iniciada ainda."
-                ),
-
-            "processo_ativo":
-                processo_ativo,
-
-        }
-
-
-
-    # LER STATUS
-
-
-    try:
-
-        dados = json.loads(
-
-            COLETOR_STATUS_FILE.read_text(
-
-                encoding=
-                    "utf-8"
-
-            )
-
-        )
-
-
-    except (
-        json.JSONDecodeError,
-        OSError,
-    ):
-
-        return {
-
-            "status":
-                "DESCONHECIDO",
-
-            "mensagem":
-                (
-                    "Não foi possível ler "
-                    "o status do coletor."
-                ),
-
-            "processo_ativo":
-                processo_ativo,
-
-        }
-
-
-    dados[
-        "processo_ativo"
-    ] = processo_ativo
-
-
-    return dados
-
-@app.post(
-    "/coleta/importar",
-    response_model=schemas.ColetaImportarResponse,
-    tags=["Coleta"],
-)
-def importar_coleta(
-    coleta: schemas.ColetaImportarRequest,
+def importar_operacao(
+    importacao: schemas.ImportacaoOperacaoRequest,
     db: Session = Depends(get_db),
 ):
-    turno = coleta.turno.strip()
+    turno = importacao.turno.strip()
 
     if not turno:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Informe o turno da coleta.",
+            detail="Informe o turno da operação.",
         )
 
     origem = (
-        coleta.origem.strip().upper()
+        importacao.origem.strip().upper()
         or
-        "HAWK_COLLECTOR"
+        "IMPORTACAO_ASSISTIDA"
     )
 
     veiculos = db.scalars(
@@ -1583,12 +1502,12 @@ def importar_coleta(
         .where(
             models.Manutencao.data_entrada
             <=
-            coleta.data,
+            importacao.data,
             or_(
                 models.Manutencao.data_retorno.is_(None),
                 models.Manutencao.data_retorno
                 >=
-                coleta.data,
+                importacao.data,
             ),
         )
     ).all()
@@ -1604,7 +1523,7 @@ def importar_coleta(
     pendencias = []
 
     try:
-        for registro in coleta.registros:
+        for registro in importacao.registros:
             placa = (
                 registro.placa
                 .strip()
@@ -1660,10 +1579,10 @@ def importar_coleta(
                 veiculo = models.Veiculo(
                     placa=placa,
                     tipo=tipo_veiculo,
-                    categoria="Integração ML",
+                    categoria="Importação assistida",
                     observacao=(
                         "Cadastrado automaticamente "
-                        "pela sincronização do Mercado Livre."
+                        "por importação assistida."
                     ),
                     ativo=True,
                 )
@@ -1688,7 +1607,7 @@ def importar_coleta(
                 cadastro_automatico = (
                     veiculo.categoria
                     ==
-                    "Integração ML"
+                    "Importação assistida"
                 )
 
                 if (
@@ -1759,7 +1678,7 @@ def importar_coleta(
                         telefone=None,
                         observacao=(
                             "Cadastrado automaticamente "
-                            "pela sincronização do Mercado Livre."
+                            "por importação assistida."
                         ),
                         ativo=True,
                     )
@@ -1799,7 +1718,7 @@ def importar_coleta(
                 .where(
                     models.Operacao.data
                     ==
-                    coleta.data,
+                    importacao.data,
                     models.Operacao.turno
                     ==
                     turno,
@@ -1867,7 +1786,7 @@ def importar_coleta(
 
             else:
                 nova_operacao = models.Operacao(
-                    data=coleta.data,
+                    data=importacao.data,
                     turno=turno,
                     veiculo_id=veiculo.id,
                     motorista_id=motorista_id,
@@ -1889,9 +1808,9 @@ def importar_coleta(
         db.rollback()
         raise
 
-    return schemas.ColetaImportarResponse(
+    return schemas.ImportacaoOperacaoResponse(
         recebidos=len(
-            coleta.registros
+            importacao.registros
         ),
         importados=importados,
         atualizados=atualizados,
@@ -1905,11 +1824,11 @@ def importar_coleta(
 # =====================================================
 
 @app.get(
-    "/coleta/veiculos-sem-registro",
+    "/operacoes/veiculos-sem-registro",
     response_model=list[
         schemas.VeiculoSemRegistroResponse
     ],
-    tags=["Coleta"],
+    tags=["Operações"],
 )
 def listar_veiculos_sem_registro(
     data_operacao: date,
@@ -1998,11 +1917,11 @@ CLASSIFICACOES_AUSENCIA = {
 
 
 @app.post(
-    "/coleta/veiculos/{veiculo_id}/classificar",
+    "/operacoes/veiculos/{veiculo_id}/classificar",
     response_model=(
         schemas.ClassificarVeiculoAusenteResponse
     ),
-    tags=["Coleta"],
+    tags=["Operações"],
 )
 def classificar_veiculo_ausente(
     veiculo_id: int,
@@ -2187,23 +2106,61 @@ def classificar_veiculo_ausente(
 # =====================================================
 
 LEGENDA_STATUS = {
-    # STATUS AUTOMÁTICOS
-    "CARREGANDO": "📦",
-    "EM_ROTA": "🚚",
+    "CARREGANDO": "✅",
+    "EM_ROTA": "✅",
     "CONCLUIDA": "✅",
-    "RETORNANDO_ESTACAO": "↩️",
+    "RETORNANDO_ESTACAO": "🔄",
     "AMBULANCIA": "🚑",
-
-    # STATUS MANUAIS
     "RESERVA_CARREGANDO": "🚗",
-    "FOLGA": "⚠️ Folga planejada",
-    "IMPEDIDO": "🚫 Impedido de rodar",
-    "SEM_CARGA": "📦 Sem carga",
-    "OUTRO_SERVICE": "🔄 Rodou em outro service",
-    "INDISPONIVEL_MOTORISTA": (
-        "⏸️ Indisponível / motorista"
-    ),
+    "FOLGA": "⚠️",
+    "IMPEDIDO": "🚫",
+    "SEM_CARGA": "📦",
+    "OUTRO_SERVICE": "🔄",
+    "INDISPONIVEL_MOTORISTA": "⏸️",
+    "SEM_CLASSIFICACAO": "",
 }
+
+
+def obter_configuracao_panorama(db: Session) -> models.PanoramaConfiguracao:
+    config = db.get(models.PanoramaConfiguracao, 1)
+    if not config:
+        config = models.PanoramaConfiguracao(
+            id=1,
+            unidade="SSP17: SBC",
+            operador="",
+        )
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+    return config
+
+
+@app.get(
+    "/configuracao-panorama",
+    response_model=schemas.PanoramaConfiguracaoResponse,
+    tags=["Panorama"],
+)
+def ler_configuracao_panorama(db: Session = Depends(get_db)):
+    return obter_configuracao_panorama(db)
+
+
+@app.put(
+    "/configuracao-panorama",
+    response_model=schemas.PanoramaConfiguracaoResponse,
+    tags=["Panorama"],
+)
+def salvar_configuracao_panorama(
+    dados: schemas.PanoramaConfiguracaoUpdate,
+    db: Session = Depends(get_db),
+):
+    config = obter_configuracao_panorama(db)
+    if dados.unidade is not None:
+        config.unidade = dados.unidade.strip() or "SSP17: SBC"
+    if dados.operador is not None:
+        config.operador = dados.operador.strip()
+    db.commit()
+    db.refresh(config)
+    return config
 
 
 @app.get(
@@ -2216,348 +2173,143 @@ def gerar_panorama(
     turno: str | None = None,
     db: Session = Depends(get_db),
 ):
+    config = obter_configuracao_panorama(db)
     veiculos = db.scalars(
         select(models.Veiculo)
-        .where(
-            models.Veiculo.ativo.is_(True)
-        )
-        .order_by(
-            models.Veiculo.placa
-        )
+        .where(models.Veiculo.ativo.is_(True))
+        .order_by(models.Veiculo.placa)
     ).all()
 
     manutencoes = db.scalars(
-        select(models.Manutencao)
-        .where(
-            models.Manutencao.data_entrada
-            <=
-            data_operacao,
+        select(models.Manutencao).where(
+            models.Manutencao.data_entrada <= data_operacao,
             or_(
                 models.Manutencao.data_retorno.is_(None),
-                models.Manutencao.data_retorno
-                >=
-                data_operacao,
+                models.Manutencao.data_retorno >= data_operacao,
             ),
         )
-        .order_by(
-            models.Manutencao.data_entrada,
-            models.Manutencao.id,
-        )
     ).all()
 
-    consulta_operacoes = (
-        select(models.Operacao)
-        .where(
-            models.Operacao.data
-            ==
-            data_operacao
-        )
+    consulta = select(models.Operacao).where(
+        models.Operacao.data == data_operacao
     )
-
     if turno:
-        consulta_operacoes = (
-            consulta_operacoes
-            .where(
-                models.Operacao.turno
-                ==
-                turno
-            )
-        )
-
+        consulta = consulta.where(models.Operacao.turno == turno)
     operacoes = db.scalars(
-        consulta_operacoes
-        .order_by(
-            models.Operacao.turno,
-            models.Operacao.criado_em,
-        )
+        consulta.order_by(models.Operacao.criado_em)
     ).all()
 
-    veiculos_por_id = {
-        veiculo.id: veiculo
-        for veiculo in veiculos
+    motoristas = {
+        item.id: item
+        for item in db.scalars(select(models.Motorista)).all()
     }
-
-    motoristas = db.scalars(
-        select(models.Motorista)
-    ).all()
-
-    motoristas_por_id = {
-        motorista.id: motorista
-        for motorista in motoristas
+    ajudantes = {
+        item.id: item
+        for item in db.scalars(select(models.Ajudante)).all()
     }
-
-    ids_em_manutencao = {
-        manutencao.veiculo_id
-        for manutencao in manutencoes
+    veiculos_por_id = {item.id: item for item in veiculos}
+    operacao_por_veiculo = {
+        item.veiculo_id: item
+        for item in operacoes
+        if item.veiculo_id is not None
     }
+    ids_manutencao = {item.veiculo_id for item in manutencoes}
 
-    ids_com_operacao = {
-        operacao.veiculo_id
-        for operacao in operacoes
-        if operacao.veiculo_id is not None
-    }
-
-    veiculos_sem_registro = [
-        veiculo
-        for veiculo in veiculos
-        if (
-            veiculo.id
-            not in
-            ids_em_manutencao
-            and
-            veiculo.id
-            not in
-            ids_com_operacao
-        )
+    ociosos = [
+        item
+        for item in veiculos
+        if item.id not in operacao_por_veiculo
+        and item.id not in ids_manutencao
     ]
-
-    data_formatada = (
-        data_operacao.strftime(
-            "%d/%m/%Y"
-        )
+    ociosos.extend(
+        veiculos_por_id[item.veiculo_id]
+        for item in operacoes
+        if item.veiculo_id in veiculos_por_id
+        and item.status in {"SEM_CLASSIFICACAO", "INDISPONIVEL_MOTORISTA"}
     )
-
-    turno_formatado = (
-        turno
-        if turno
-        else "Todos os turnos"
-    )
+    vistos = set()
+    ociosos = [
+        item for item in ociosos
+        if not (item.id in vistos or vistos.add(item.id))
+    ]
 
     linhas = [
-        "━━━━━━━━━━━━━━━━━━━━",
-        "PANORAMA SSP17: SBC",
-        "MLP: HAWK TRANSPORTES",
-        "━━━━━━━━━━━━━━━━━━━━",
+        f"PANORAMA {config.unidade}",
+        f"MLP: {config.operador}" if config.operador else "MLP:",
+        data_operacao.strftime("%d/%m/%Y"),
         "",
-        f"📅 Data: {data_formatada}",
-        f"🕐 Turno: {turno_formatado}",
+        f"Quantidade total de veiculos na base: {len(veiculos)}",
+        f"Quantidade total de veiculos em manutenção: {len(manutencoes)}",
+        f"Quantidade de veiculos ociosos: {len(ociosos)}",
         "",
-        "📊 RESUMO",
+        "Legenda:",
         "",
-        (
-            "🚚 Quantidade total de veículos "
-            f"na base: {len(veiculos)}"
-        ),
-        (
-            "📍 Registros no período: "
-            f"{len(operacoes)}"
-        ),
-        (
-            "🛠️ Veículos em manutenção: "
-            f"{len(manutencoes)}"
-        ),
-        (
-            "⚪ Veículos sem classificação: "
-            f"{len(veiculos_sem_registro)}"
-        ),
-        "",
-        "LEGENDA",
-        "",
-        "📦 Carregando",
-        "🚚 Em rota",
-        "✅ Concluída",
-        "↩️ Retornando à estação",
-        "🚑 Ambulância entre paradas",
-        "🚗 Carro reserva / Carregando",
-        "⚠️ Folga planejada",
+        "✅ Carregando",
+        "🚗 Carro reserva/Carregando",
+        "⏸️ Indisponível/motorista",
+        "⚠️ Folga planejada motorista",
         "🛠️ Manutenção",
-        "🚫 Impedido de rodar",
+        "🚫 Impedido de rodar no dia. (informar o motivo)",
         "📦 Sem carga",
         "🔄 Rodou em outro service",
-        "⏸️ Indisponível / motorista",
+        "",
+        "FROTA FIXA",
+        "",
     ]
 
-    if operacoes:
-        linhas.extend([
-            "",
-            "━━━━━━━━━━━━━━━━━━━━",
-            "📍 SITUAÇÃO DA FROTA",
-            "━━━━━━━━━━━━━━━━━━━━",
-        ])
+    for veiculo in veiculos:
+        operacao = operacao_por_veiculo.get(veiculo.id)
+        if not operacao:
+            if veiculo.id not in ids_manutencao:
+                linhas.append(veiculo.placa)
+            continue
 
-        turnos_encontrados = []
+        partes = [veiculo.placa]
+        emoji = LEGENDA_STATUS.get(operacao.status, "")
+        if emoji:
+            partes.append(emoji)
+        if operacao.status == "FOLGA":
+            partes.append("Folga")
+        if operacao.rota_id:
+            partes.append(operacao.rota_id)
 
-        for operacao in operacoes:
-            if (
-                operacao.turno
-                not in
-                turnos_encontrados
-            ):
-                turnos_encontrados.append(
-                    operacao.turno
-                )
+        motorista = motoristas.get(operacao.motorista_id)
+        if motorista:
+            partes.append(f"({motorista.nome})")
 
-        for turno_atual in turnos_encontrados:
-            operacoes_turno = [
-                operacao
-                for operacao in operacoes
-                if (
-                    operacao.turno
-                    ==
-                    turno_atual
-                )
-            ]
+        ajudante = ajudantes.get(operacao.ajudante_id)
+        if ajudante:
+            partes.append(f"[Ajudante: {ajudante.nome}]")
 
-            linhas.extend([
-                "",
-                f"▸ {turno_atual.upper()}",
-                "",
-            ])
+        if operacao.observacao:
+            partes.append(operacao.observacao)
 
-            operacoes_turno.sort(
-                key=lambda operacao: (
-                    veiculos_por_id.get(
-                        operacao.veiculo_id
-                    ).placa
-                    if (
-                        operacao.veiculo_id
-                        in
-                        veiculos_por_id
-                    )
-                    else ""
-                )
-            )
+        linhas.append(" ".join(partes))
 
-            for operacao in operacoes_turno:
-                veiculo = (
-                    veiculos_por_id.get(
-                        operacao.veiculo_id
-                    )
-                )
+    linhas.extend(["", "CARROS EM MANUTENÇÃO.", ""])
 
-                motorista = (
-                    motoristas_por_id.get(
-                        operacao.motorista_id
-                    )
-                )
-
-                placa = (
-                    veiculo.placa
-                    if veiculo
-                    else "SEM VEÍCULO"
-                )
-
-                status_texto = (
-                    LEGENDA_STATUS.get(
-                        operacao.status,
-                        operacao.status,
-                    )
-                )
-
-                linha = (
-                    f"{placa} {status_texto}"
-                )
-
-                if operacao.rota_id:
-                    linha += (
-                        " • Rota: "
-                        f"{operacao.rota_id}"
-                    )
-
-                if motorista:
-                    linha += (
-                        f" • {motorista.nome}"
-                    )
-
-                if operacao.observacao:
-                    linha += (
-                        f" - {operacao.observacao}"
-                    )
-
-                linhas.append(
-                    linha
-                )
-
-    linhas.extend([
-        "",
-        "━━━━━━━━━━━━━━━━━━━━",
-        "🛠️ CARROS EM MANUTENÇÃO",
-        "━━━━━━━━━━━━━━━━━━━━",
-        "",
-    ])
-
-    if manutencoes:
-        manutencoes_ordenadas = sorted(
-            manutencoes,
-            key=lambda manutencao: (
-                veiculos_por_id.get(
-                    manutencao.veiculo_id
-                ).placa
-                if (
-                    manutencao.veiculo_id
-                    in
-                    veiculos_por_id
-                )
-                else ""
-            )
-        )
-
-        for manutencao in manutencoes_ordenadas:
-            veiculo = (
-                veiculos_por_id.get(
-                    manutencao.veiculo_id
-                )
-            )
-
-            if not veiculo:
-                continue
-
-            linha = (
-                f"{veiculo.placa} 🛠️ "
-                f"{manutencao.motivo}"
-            )
-
-            if manutencao.previsao_retorno:
-                linha += (
-                    " • Previsão: "
-                    +
-                    manutencao
-                    .previsao_retorno
-                    .strftime(
-                        "%d/%m"
-                    )
-                )
-
-            linhas.append(
-                linha
-            )
-
-    else:
+    for manutencao in sorted(
+        manutencoes,
+        key=lambda item: (
+            veiculos_por_id.get(item.veiculo_id).placa
+            if item.veiculo_id in veiculos_por_id
+            else ""
+        ),
+    ):
+        veiculo = veiculos_por_id.get(manutencao.veiculo_id)
+        if not veiculo:
+            continue
+        motivo = (manutencao.motivo or "").strip()
         linhas.append(
-            "Nenhum veículo em manutenção."
+            f"{veiculo.placa} 🛠️" + (f" {motivo}" if motivo else "")
         )
-
-    if veiculos_sem_registro:
-        linhas.extend([
-            "",
-            "━━━━━━━━━━━━━━━━━━━━",
-            "⚪ SEM CLASSIFICAÇÃO NO PERÍODO",
-            "━━━━━━━━━━━━━━━━━━━━",
-            "",
-        ])
-
-        for veiculo in veiculos_sem_registro:
-            linhas.append(
-                veiculo.placa
-            )
-
-    texto_panorama = (
-        "\n".join(
-            linhas
-        )
-    )
 
     return schemas.PanoramaResponse(
         data=data_operacao,
         turno=turno,
-        total_veiculos=len(
-            veiculos
-        ),
-        veiculos_manutencao=len(
-            manutencoes
-        ),
-        veiculos_operacao=len(
-            operacoes
-        ),
-        texto=texto_panorama,
+        total_veiculos=len(veiculos),
+        veiculos_manutencao=len(manutencoes),
+        veiculos_operacao=len(operacoes),
+        veiculos_ociosos=len(ociosos),
+        texto="\n".join(linhas),
     )

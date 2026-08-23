@@ -8,13 +8,9 @@ __pycache__
 .pytest_cache
 .vscode
 .idea
-
-automation/.browser-profile
-automation/coletor_execucao.log
-automation/coletor_status.json
-
+*.log
+*.dump
 database/*.db
 database/*.sqlite
 database/*.sqlite3
-
 README.md

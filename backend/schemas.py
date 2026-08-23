@@ -44,14 +44,22 @@ class VeiculoResponse(VeiculoBase):
 
 class MotoristaCreate(BaseModel):
     nome: str
+    cpf: str | None = None
     telefone: str | None = None
+    cnh: str | None = None
+    categoria_cnh: str | None = None
+    validade_cnh: date | None = None
     observacao: str | None = None
     ativo: bool = True
 
 
 class MotoristaUpdate(BaseModel):
     nome: str | None = None
+    cpf: str | None = None
     telefone: str | None = None
+    cnh: str | None = None
+    categoria_cnh: str | None = None
+    validade_cnh: date | None = None
     observacao: str | None = None
     ativo: bool | None = None
 
@@ -59,7 +67,11 @@ class MotoristaUpdate(BaseModel):
 class MotoristaResponse(BaseModel):
     id: int
     nome: str
+    cpf: str | None
     telefone: str | None
+    cnh: str | None
+    categoria_cnh: str | None
+    validade_cnh: date | None
     observacao: str | None
     ativo: bool
     criado_em: datetime
@@ -68,6 +80,33 @@ class MotoristaResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True
     )
+
+
+# =====================================================
+# AJUDANTES
+# =====================================================
+
+class AjudanteCreate(BaseModel):
+    nome: str
+    cpf: str | None = None
+    telefone: str | None = None
+    observacao: str | None = None
+    ativo: bool = True
+
+
+class AjudanteUpdate(BaseModel):
+    nome: str | None = None
+    cpf: str | None = None
+    telefone: str | None = None
+    observacao: str | None = None
+    ativo: bool | None = None
+
+
+class AjudanteResponse(AjudanteCreate):
+    id: int
+    criado_em: datetime
+    atualizado_em: datetime
+    model_config = ConfigDict(from_attributes=True)
 
 
 # =====================================================
@@ -120,6 +159,7 @@ class OperacaoCreate(BaseModel):
     turno: str
     veiculo_id: int | None = None
     motorista_id: int | None = None
+    ajudante_id: int | None = None
     rota_id: str | None = None
     status: str
     observacao: str | None = None
@@ -130,6 +170,7 @@ class OperacaoUpdate(BaseModel):
     turno: str | None = None
     veiculo_id: int | None = None
     motorista_id: int | None = None
+    ajudante_id: int | None = None
     rota_id: str | None = None
     status: str | None = None
     observacao: str | None = None
@@ -141,6 +182,7 @@ class OperacaoResponse(BaseModel):
     turno: str
     veiculo_id: int | None
     motorista_id: int | None
+    ajudante_id: int | None
     rota_id: str | None
     status: str
     observacao: str | None
@@ -182,14 +224,15 @@ class PanoramaResponse(BaseModel):
     total_veiculos: int
     veiculos_manutencao: int
     veiculos_operacao: int
+    veiculos_ociosos: int
     texto: str
 
 
 # =====================================================
-# COLETA AUTOMÁTICA
+# IMPORTAÇÃO ASSISTIDA
 # =====================================================
 
-class ColetaRegistro(BaseModel):
+class ImportacaoOperacaoRegistro(BaseModel):
     placa: str
 
     # Usado para preencher ou atualizar o cadastro
@@ -199,7 +242,7 @@ class ColetaRegistro(BaseModel):
     motorista: str | None = None
     rota_id: str | None = None
 
-    # Status já traduzido para o padrão do Hawk:
+    # Status padronizado da operação:
     # CARREGANDO, EM_ROTA, CONCLUIDA,
     # RETORNANDO_ESTACAO ou AMBULANCIA.
     status: str
@@ -213,24 +256,24 @@ class ColetaRegistro(BaseModel):
     observacao: str | None = None
 
 
-class ColetaImportarRequest(BaseModel):
+class ImportacaoOperacaoRequest(BaseModel):
     data: date
     turno: str
-    origem: str = "HAWK_COLLECTOR"
-    registros: list[ColetaRegistro]
+    origem: str = "IMPORTACAO_ASSISTIDA"
+    registros: list[ImportacaoOperacaoRegistro]
 
 
-class ColetaPendencia(BaseModel):
+class ImportacaoOperacaoPendencia(BaseModel):
     placa: str | None = None
     motivo: str
 
 
-class ColetaImportarResponse(BaseModel):
+class ImportacaoOperacaoResponse(BaseModel):
     recebidos: int
     importados: int
     atualizados: int
     ignorados: int
-    pendencias: list[ColetaPendencia]
+    pendencias: list[ImportacaoOperacaoPendencia]
 
 
 # =====================================================
@@ -267,3 +310,15 @@ class ClassificarVeiculoAusenteResponse(BaseModel):
     mensagem: str
     operacao: OperacaoResponse | None = None
     manutencao: ManutencaoResponse | None = None
+
+class PanoramaConfiguracaoUpdate(BaseModel):
+    unidade: str | None = None
+    operador: str | None = None
+
+
+class PanoramaConfiguracaoResponse(BaseModel):
+    id: int
+    unidade: str
+    operador: str
+    atualizado_em: datetime
+    model_config = ConfigDict(from_attributes=True)

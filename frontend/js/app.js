@@ -1,4 +1,4 @@
-// HAWK OPERATIONS
+// YLUME OPS
 
 // ELEMENTOS - DASHBOARD
 
@@ -32,6 +32,30 @@ const dashboardOperationStatusChartCanvas =
         "dashboardOperationStatusChart"
     );
 
+const sidebarFleetCount =
+    document.getElementById("sidebarFleetCount");
+
+const sidebarDriversCount =
+    document.getElementById("sidebarDriversCount");
+
+const sidebarHelpersCount =
+    document.getElementById("sidebarHelpersCount");
+
+const sidebarMaintenanceCount =
+    document.getElementById("sidebarMaintenanceCount");
+
+const sidebarOperationsCount =
+    document.getElementById("sidebarOperationsCount");
+
+const dashboardDriversActive =
+    document.getElementById("dashboardDriversActive");
+
+const dashboardOpsTodayStrip =
+    document.getElementById("dashboardOpsTodayStrip");
+
+const dashboardAvailabilityRate =
+    document.getElementById("dashboardAvailabilityRate");
+
 const dashboardUtilizationChartCanvas =
     document.getElementById(
         "dashboardUtilizationChart"
@@ -63,6 +87,9 @@ const menuFleet =
 const menuDrivers =
     document.getElementById("menuDrivers");
 
+const menuHelpers =
+    document.getElementById("menuHelpers");
+
 const menuMaintenance =
     document.getElementById("menuMaintenance");
 
@@ -83,6 +110,9 @@ const fleetView =
 
 const driversView =
     document.getElementById("driversView");
+
+const helpersView =
+    document.getElementById("helpersView");
 
 const maintenanceView =
     document.getElementById("maintenanceView");
@@ -213,6 +243,9 @@ const editVehicleFormMessage =
 const saveEditVehicleButton =
     document.getElementById("saveEditVehicleButton");
 
+const deleteVehicleFromModal =
+    document.getElementById("deleteVehicleFromModal");
+
 // ELEMENTOS - HISTÓRICO DO VEÍCULO
 
 const vehicleHistoryModal =
@@ -288,8 +321,20 @@ const driverForm =
 const driverName =
     document.getElementById("driverName");
 
+const driverCpf =
+    document.getElementById("driverCpf");
+
 const driverPhone =
     document.getElementById("driverPhone");
+
+const driverCnh =
+    document.getElementById("driverCnh");
+
+const driverCnhCategory =
+    document.getElementById("driverCnhCategory");
+
+const driverCnhExpiry =
+    document.getElementById("driverCnhExpiry");
 
 const driverObservation =
     document.getElementById("driverObservation");
@@ -320,8 +365,20 @@ const editDriverId =
 const editDriverName =
     document.getElementById("editDriverName");
 
+const editDriverCpf =
+    document.getElementById("editDriverCpf");
+
 const editDriverPhone =
     document.getElementById("editDriverPhone");
+
+const editDriverCnh =
+    document.getElementById("editDriverCnh");
+
+const editDriverCnhCategory =
+    document.getElementById("editDriverCnhCategory");
+
+const editDriverCnhExpiry =
+    document.getElementById("editDriverCnhExpiry");
 
 const editDriverObservation =
     document.getElementById("editDriverObservation");
@@ -334,6 +391,109 @@ const editDriverFormMessage =
 
 const saveEditDriverButton =
     document.getElementById("saveEditDriverButton");
+
+const deleteDriverFromModal =
+    document.getElementById("deleteDriverFromModal");
+
+
+async function excluirMotorista(
+    driverId,
+    motorista
+) {
+    if (!driverId || !motorista) {
+        return;
+    }
+
+    const confirmar = await confirmarAcao(
+        `Deseja excluir ${motorista.nome} da base? Se houver histórico operacional, o Ylume Ops oferecerá a opção de arquivar o cadastro sem apagar os registros anteriores.`,
+        {
+            titulo: "Excluir motorista",
+            confirmarTexto: "Excluir",
+            perigo: true
+        }
+    );
+
+    if (!confirmar) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `/motoristas/${driverId}`,
+            { method: "DELETE" }
+        );
+
+        if (response.ok) {
+            fecharModalEditarMotorista();
+            await carregarDados();
+            mostrarToast("Motorista excluído com sucesso.", "success");
+            return;
+        }
+
+        const data = await response.json();
+
+        if (response.status === 409) {
+            const arquivar = await confirmarAcao(
+                "Este motorista possui histórico operacional. Para preservar os registros anteriores, você pode arquivar o cadastro. Ele deixará de aparecer na visão padrão e poderá ser reativado depois.",
+                {
+                    eyebrow: "HISTÓRICO PRESERVADO",
+                    titulo: "Arquivar motorista?",
+                    confirmarTexto: "Arquivar motorista"
+                }
+            );
+
+            if (!arquivar) {
+                return;
+            }
+
+            const responseArquivar = await fetch(
+                `/motoristas/${driverId}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ ativo: false })
+                }
+            );
+
+            if (!responseArquivar.ok) {
+                const erro = await responseArquivar.json();
+                throw new Error(
+                    erro.detail || "Não foi possível arquivar o motorista."
+                );
+            }
+
+            fecharModalEditarMotorista();
+            await carregarDados();
+            mostrarToast("Motorista arquivado. O histórico foi preservado.", "success");
+            return;
+        }
+
+        throw new Error(
+            data.detail || "Não foi possível excluir o motorista."
+        );
+    } catch (error) {
+        mostrarToast(error.message);
+    }
+}
+
+
+deleteDriverFromModal?.addEventListener(
+    "click",
+    async () => {
+
+        const driverId =
+            Number(editDriverId.value);
+
+        await excluirMotorista(
+            driverId,
+            buscarMotorista(driverId)
+        );
+
+    }
+);
+
 
 // HISTÓRICO DO MOTORISTA
 
@@ -492,6 +652,38 @@ const closeMaintenanceDetailsModal =
 const closeMaintenanceDetailsButton =
     document.getElementById("closeMaintenanceDetailsButton");
 
+// ELEMENTOS - AJUDANTES
+
+const helpersTable = document.getElementById("helpersTable");
+const helpersRegistered = document.getElementById("helpersRegistered");
+const helpersActive = document.getElementById("helpersActive");
+const helpersInactive = document.getElementById("helpersInactive");
+const helpersOperationsToday = document.getElementById("helpersOperationsToday");
+const helperSearchInput = document.getElementById("helperSearchInput");
+const helperStatusFilter = document.getElementById("helperStatusFilter");
+const openHelperModal = document.getElementById("openHelperModal");
+const helperModal = document.getElementById("helperModal");
+const closeHelperModal = document.getElementById("closeHelperModal");
+const cancelHelperModal = document.getElementById("cancelHelperModal");
+const helperForm = document.getElementById("helperForm");
+const helperName = document.getElementById("helperName");
+const helperCpf = document.getElementById("helperCpf");
+const helperPhone = document.getElementById("helperPhone");
+const helperObservation = document.getElementById("helperObservation");
+const helperFormMessage = document.getElementById("helperFormMessage");
+const editHelperModal = document.getElementById("editHelperModal");
+const closeEditHelperModal = document.getElementById("closeEditHelperModal");
+const cancelEditHelperModal = document.getElementById("cancelEditHelperModal");
+const editHelperForm = document.getElementById("editHelperForm");
+const editHelperId = document.getElementById("editHelperId");
+const editHelperName = document.getElementById("editHelperName");
+const editHelperCpf = document.getElementById("editHelperCpf");
+const editHelperPhone = document.getElementById("editHelperPhone");
+const editHelperObservation = document.getElementById("editHelperObservation");
+const editHelperStatus = document.getElementById("editHelperStatus");
+const editHelperFormMessage = document.getElementById("editHelperFormMessage");
+const deleteHelperFromModal = document.getElementById("deleteHelperFromModal");
+
 // ELEMENTOS - OPERAÇÕES
 
 const operationsTable =
@@ -530,6 +722,9 @@ const operationVehicle =
 const operationDriver =
     document.getElementById("operationDriver");
 
+const operationHelper =
+    document.getElementById("operationHelper");
+
 const operationRoute =
     document.getElementById("operationRoute");
 
@@ -545,36 +740,27 @@ const operationFormMessage =
 const saveOperationButton =
     document.getElementById("saveOperationButton");
 
-// SINCRONIZAÇÃO AUTOMÁTICA
+// IMPORTAÇÃO INTELIGENTE
 
-const syncOperationButton =
+const openImportOperationModal =
     document.getElementById(
-        "syncOperationButton"
+        "openImportOperationModal"
     );
 
-const syncStatusCard =
+const importOperationModal =
     document.getElementById(
-        "syncStatusCard"
+        "importOperationModal"
     );
 
-const syncStatusIcon =
+const closeImportOperationModal =
     document.getElementById(
-        "syncStatusIcon"
+        "closeImportOperationModal"
     );
 
-const syncStatusTitle =
+const cancelImportOperationModal =
     document.getElementById(
-        "syncStatusTitle"
+        "cancelImportOperationModal"
     );
-
-const syncStatusMessage =
-    document.getElementById(
-        "syncStatusMessage"
-    );
-
-
-let atualizacaoColetorLocalInterval =
-    null;
 
 // ELEMENTOS - VEÍCULOS SEM CLASSIFICAÇÃO
 
@@ -692,6 +878,11 @@ const panoramaMaintenance =
 const panoramaOperations =
     document.getElementById("panoramaOperations");
 
+const panoramaIdle = document.getElementById("panoramaIdle");
+const panoramaUnit = document.getElementById("panoramaUnit");
+const panoramaOperator = document.getElementById("panoramaOperator");
+const savePanoramaConfigButton = document.getElementById("savePanoramaConfigButton");
+
 // DADOS
 
 let veiculos = [];
@@ -701,6 +892,8 @@ let manutencoesAtivas = [];
 let manutencoesFinalizadas = [];
 
 let motoristas = [];
+
+let ajudantes = [];
 
 let operacoes = [];
 
@@ -731,58 +924,63 @@ let dashboardTopMaintenanceVehiclesChartInstance =
 const statusOperacao = {
 
     CARREGANDO: {
-        texto: "📦 Carregando",
+        texto: "Carregando",
         classe: "badge-operation"
     },
 
     EM_ROTA: {
-        texto: "🚚 Em rota",
+        texto: "Em rota",
         classe: "badge-operation"
     },
 
     CONCLUIDA: {
-        texto: "✅ Concluída",
+        texto: "Concluída",
         classe: "badge-active"
     },
 
     RETORNANDO_ESTACAO: {
-        texto: "↩️ Retornando à estação",
+        texto: "Retornando à estação",
         classe: "badge-maintenance"
     },
 
     AMBULANCIA: {
-        texto: "🚑 Ambulância entre paradas",
+        texto: "Ambulância entre paradas",
         classe: "badge-inactive"
     },
 
     RESERVA_CARREGANDO: {
-        texto: "🚗 Reserva / Carregando",
+        texto: "Reserva / Carregando",
         classe: "badge-operation"
     },
 
     FOLGA: {
-        texto: "⚠️ Folga",
+        texto: "Folga",
         classe: "badge-maintenance"
     },
 
     IMPEDIDO: {
-        texto: "🚫 Impedido",
+        texto: "Impedido",
         classe: "badge-inactive"
     },
 
     SEM_CARGA: {
-        texto: "📦 Sem carga",
+        texto: "Sem carga",
         classe: "badge-operation"
     },
 
     OUTRO_SERVICE: {
-        texto: "🔄 Outro service",
+        texto: "Outro serviço",
         classe: "badge-operation"
     },
 
     INDISPONIVEL_MOTORISTA: {
-        texto: "⏸️ Indisponível / Motorista",
+        texto: "Indisponível / Motorista",
         classe: "badge-inactive"
+    },
+
+    SEM_CLASSIFICACAO: {
+        texto: "Sem classificação",
+        classe: "badge-maintenance"
     }
 
 };
@@ -870,6 +1068,150 @@ function escaparHTML(
 
 }
 
+function somenteDigitos(valor) {
+    return String(valor ?? "").replace(/\D/g, "");
+}
+
+function formatarCPF(valor) {
+    const digitos = somenteDigitos(valor).slice(0, 11);
+
+    if (!digitos) {
+        return "";
+    }
+
+    return digitos
+        .replace(/^(\d{3})(\d)/, "$1.$2")
+        .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+        .replace(/\.(\d{3})(\d)/, ".$1-$2");
+}
+
+function formatarCpfTabela(valor) {
+    const digitos = somenteDigitos(valor);
+
+    if (digitos.length !== 11) {
+        return "Não informado";
+    }
+
+    return `***.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-**`;
+}
+
+function situacaoCnh(motorista) {
+    const validade = motorista.validade_cnh;
+
+    if (!motorista.cnh && !validade) {
+        return {
+            texto: "Não informada",
+            classe: "cnh-neutral"
+        };
+    }
+
+    if (!validade) {
+        return {
+            texto: motorista.categoria_cnh
+                ? `Cat. ${motorista.categoria_cnh}`
+                : "Sem validade informada",
+            classe: "cnh-neutral"
+        };
+    }
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const dataValidade = new Date(`${validade}T00:00:00`);
+    const dias = Math.ceil((dataValidade - hoje) / 86400000);
+
+    if (dias < 0) {
+        return {
+            texto: `Vencida em ${formatarData(validade)}`,
+            classe: "cnh-expired"
+        };
+    }
+
+    if (dias <= 30) {
+        return {
+            texto: `Vence em ${dias} dia${dias === 1 ? "" : "s"}`,
+            classe: "cnh-warning"
+        };
+    }
+
+    return {
+        texto: `Válida até ${formatarData(validade)}`,
+        classe: "cnh-valid"
+    };
+}
+
+function mostrarToast(mensagem, tipo = "error") {
+    const stack = document.getElementById("toastStack");
+
+    if (!stack) {
+        console.log(mensagem);
+        return;
+    }
+
+    const toast = document.createElement("div");
+    toast.className = `app-toast app-toast-${tipo}`;
+
+    const icone = tipo === "success" ? "check-circle-2" : "circle-alert";
+
+    toast.innerHTML = `
+        <i data-lucide="${icone}"></i>
+        <span>${escaparHTML(mensagem)}</span>
+    `;
+
+    stack.appendChild(toast);
+    window.lucide?.createIcons();
+
+    requestAnimationFrame(() => toast.classList.add("show"));
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 220);
+    }, 4200);
+}
+
+function confirmarAcao(mensagem, opcoes = {}) {
+    const overlay = document.getElementById("actionDialog");
+    const titulo = document.getElementById("actionDialogTitle");
+    const texto = document.getElementById("actionDialogMessage");
+    const confirmar = document.getElementById("actionDialogConfirm");
+    const cancelar = document.getElementById("actionDialogCancel");
+    const eyebrow = document.getElementById("actionDialogEyebrow");
+
+    if (!overlay || !confirmar || !cancelar) {
+        return Promise.resolve(window.confirm(mensagem));
+    }
+
+    titulo.textContent = opcoes.titulo || "Confirmar ação";
+    texto.textContent = mensagem;
+    eyebrow.textContent = opcoes.eyebrow || "CONFIRMAÇÃO";
+    confirmar.textContent = opcoes.confirmarTexto || "Confirmar";
+    confirmar.className = opcoes.perigo
+        ? "danger-button"
+        : "primary-button";
+
+    overlay.classList.add("active");
+    document.body.classList.add("modal-open");
+
+    return new Promise(resolve => {
+        const finalizar = valor => {
+            overlay.classList.remove("active");
+            document.body.classList.remove("modal-open");
+            confirmar.onclick = null;
+            cancelar.onclick = null;
+            overlay.onclick = null;
+            resolve(valor);
+        };
+
+        confirmar.onclick = () => finalizar(true);
+        cancelar.onclick = () => finalizar(false);
+        overlay.onclick = event => {
+            if (event.target === overlay) {
+                finalizar(false);
+            }
+        };
+    });
+}
+
 function garantirOpcaoSelect(
     select,
     valor
@@ -946,6 +1288,10 @@ function buscarMotorista(
 
 }
 
+function buscarAjudante(id) {
+    return ajudantes.find(ajudante => ajudante.id === id);
+}
+
 function buscarManutencaoAtiva(
     veiculoId
 ) {
@@ -977,6 +1323,8 @@ async function carregarDados() {
 
         responseMotoristas,
 
+        responseAjudantes,
+
         responseOperacoes
 
     ] = await Promise.all([
@@ -988,6 +1336,8 @@ async function carregarDados() {
     fetch("/manutencoes/finalizadas"),
 
     fetch("/motoristas"),
+
+    fetch("/ajudantes"),
 
     fetch("/operacoes")
     
@@ -1001,6 +1351,8 @@ async function carregarDados() {
         !responseManutencoesFinalizadas.ok
         ||
         !responseMotoristas.ok
+        ||
+        !responseAjudantes.ok
         ||
         !responseOperacoes.ok
     ) {
@@ -1023,10 +1375,15 @@ async function carregarDados() {
         motoristas =
             await responseMotoristas.json();
 
+        ajudantes =
+            await responseAjudantes.json();
+
         operacoes =
             await responseOperacoes.json();
 
         atualizarIndicadores();
+
+        atualizarSidebarContadores();
 
         atualizarGraficosDashboard();
 
@@ -1050,6 +1407,10 @@ async function carregarDados() {
 
         aplicarFiltrosMotoristas();
 
+        atualizarResumoAjudantes();
+
+        aplicarFiltrosAjudantes();
+
         atualizarSelectManutencao();
 
         atualizarSelectsOperacao();
@@ -1067,6 +1428,33 @@ async function carregarDados() {
 
     }
 
+}
+
+function atualizarSidebarContadores() {
+
+    const hoje = hojeISO();
+
+    if (sidebarFleetCount) {
+        sidebarFleetCount.textContent = veiculos.length;
+    }
+
+    if (sidebarDriversCount) {
+        sidebarDriversCount.textContent = motoristas.length;
+    }
+
+    if (sidebarHelpersCount) {
+        sidebarHelpersCount.textContent = ajudantes.length;
+    }
+
+    if (sidebarMaintenanceCount) {
+        sidebarMaintenanceCount.textContent = manutencoesAtivas.length;
+    }
+
+    if (sidebarOperationsCount) {
+        sidebarOperationsCount.textContent = operacoes.filter(
+            operacao => operacao.data === hoje
+        ).length;
+    }
 }
 
 // INDICADORES
@@ -1132,22 +1520,34 @@ function atualizarIndicadores() {
 
     }
 
+    const hoje = hojeISO();
+
+    const registrosHoje = operacoes.filter(
+        operacao => operacao.data === hoje
+    );
+
     if (operacaoHoje) {
+        operacaoHoje.textContent = registrosHoje.length;
+    }
 
-        const hoje =
-            hojeISO();
+    const motoristasAtivos = motoristas.filter(
+        motorista => motorista.ativo
+    ).length;
 
-        const registrosHoje =
-            operacoes.filter(
+    const taxaDisponibilidade = veiculos.length > 0
+        ? Math.round((Math.max(disponiveis, 0) / veiculos.length) * 100)
+        : 0;
 
-                operacao =>
-                    operacao.data === hoje
+    if (dashboardDriversActive) {
+        dashboardDriversActive.textContent = motoristasAtivos;
+    }
 
-            );
+    if (dashboardOpsTodayStrip) {
+        dashboardOpsTodayStrip.textContent = registrosHoje.length;
+    }
 
-        operacaoHoje.textContent =
-            registrosHoje.length;
-
+    if (dashboardAvailabilityRate) {
+        dashboardAvailabilityRate.textContent = `${taxaDisponibilidade}%`;
     }
 
 }
@@ -1261,7 +1661,7 @@ function atualizarGraficosDashboard() {
     Chart.defaults.font.family =
         'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
-    Chart.defaults.color = "#6e7888";
+    Chart.defaults.color = "#8b8496";
 
     // =================================================
     // SITUAÇÃO ATUAL DA FROTA
@@ -1282,51 +1682,60 @@ function atualizarGraficosDashboard() {
     });
 
     destruirGrafico(dashboardFleetChartInstance);
+    dashboardFleetChartInstance = null;
 
     if (dashboardFleetChartCanvas) {
-        dashboardFleetChartInstance = new Chart(
-            dashboardFleetChartCanvas,
-            {
-                type: "doughnut",
-                data: {
-                    labels: [
-                        "Disponíveis",
-                        "Em manutenção",
-                        "Inativos"
-                    ],
-                    datasets: [
-                        {
-                            data: [
-                                resumoFrota.DISPONIVEL,
-                                resumoFrota.MANUTENCAO,
-                                resumoFrota.INATIVO
-                            ],
-                            backgroundColor: [
-                                "#18a66a",
-                                "#e5a11a",
-                                "#94a3b8"
-                            ],
-                            borderWidth: 0
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: "72%",
-                    plugins: {
-                        legend: {
-                            position: "bottom",
-                            labels: {
-                                usePointStyle: true,
-                                boxWidth: 8,
-                                padding: 20
-                            }
-                        }
-                    }
-                }
-            }
+
+        const itensFrota = [
+            { texto: "Disponíveis", quantidade: resumoFrota.DISPONIVEL },
+            { texto: "Em manutenção", quantidade: resumoFrota.MANUTENCAO },
+            { texto: "Inativos", quantidade: resumoFrota.INATIVO }
+        ];
+
+        const totalFrota = itensFrota.reduce(
+            (total, item) => total + item.quantidade,
+            0
         );
+
+        if (totalFrota === 0) {
+            dashboardFleetChartCanvas.innerHTML = `
+                <div class="fleet-status-empty">
+                    <i data-lucide="truck"></i>
+                    <strong>Nenhum veículo cadastrado</strong>
+                    <span>A distribuição aparecerá aqui conforme a frota for registrada.</span>
+                </div>
+            `;
+        } else {
+            dashboardFleetChartCanvas.innerHTML = itensFrota
+                .map(item => {
+                    const percentual = Math.round(
+                        (item.quantidade / totalFrota) * 100
+                    );
+
+                    return `
+                        <div class="fleet-status-item">
+                            <div class="fleet-status-heading">
+                                <span class="fleet-status-label">
+                                    <span class="fleet-status-dot"></span>
+                                    ${item.texto}
+                                </span>
+                                <span class="fleet-status-value">
+                                    ${item.quantidade}
+                                    <small>${percentual}%</small>
+                                </span>
+                            </div>
+                            <div class="fleet-status-track">
+                                <span class="fleet-status-fill" style="--status-width:${percentual}%"></span>
+                            </div>
+                        </div>
+                    `;
+                })
+                .join("");
+        }
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
     }
 
     // =================================================
@@ -1342,61 +1751,80 @@ function atualizarGraficosDashboard() {
     const chavesStatus = Object.keys(statusOperacao);
 
     const dadosStatus = chavesStatus.map(
-        status =>
-            operacoesHoje.filter(
+        status => ({
+            status,
+            quantidade: operacoesHoje.filter(
                 operacao => operacao.status === status
             ).length
+        })
     );
 
-    destruirGrafico(dashboardOperationStatusChartInstance);
-
     if (dashboardOperationStatusChartCanvas) {
-        dashboardOperationStatusChartInstance = new Chart(
-            dashboardOperationStatusChartCanvas,
-            {
-                type: "bar",
-                data: {
-                    labels: chavesStatus.map(
-                        status => statusOperacao[status].texto
-                    ),
-                    datasets: [
-                        {
-                            label: "Registros",
-                            data: dadosStatus,
-                            backgroundColor: "#1c5796",
-                            borderRadius: 6,
-                            maxBarThickness: 26
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: "y",
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            },
-                            grid: {
-                                color: "#edf0f4"
-                            }
-                        },
-                        y: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            }
+
+        const totalRegistros = dadosStatus.reduce(
+            (total, item) => total + item.quantidade,
+            0
         );
+
+        const itensVisiveis = dadosStatus.filter(
+            item => item.quantidade > 0
+        );
+
+        if (itensVisiveis.length === 0) {
+
+            dashboardOperationStatusChartCanvas.innerHTML = `
+                <div class="operation-status-empty">
+                    <i data-lucide="chart-no-axes-column"></i>
+                    <strong>Nenhuma operação registrada hoje</strong>
+                    <span>Os status aparecerão aqui conforme os registros forem adicionados.</span>
+                </div>
+            `;
+
+        } else {
+
+            dashboardOperationStatusChartCanvas.innerHTML =
+                itensVisiveis
+                    .map(item => {
+
+                        const percentual = totalRegistros > 0
+                            ? Math.round(
+                                (item.quantidade / totalRegistros) * 100
+                            )
+                            : 0;
+
+                        const configuracao =
+                            statusOperacao[item.status];
+
+                        return `
+                            <div class="operation-status-item">
+                                <div class="operation-status-heading">
+                                    <span class="operation-status-label">
+                                        <span class="operation-status-dot"></span>
+                                        ${escaparHTML(configuracao.texto)}
+                                    </span>
+
+                                    <span class="operation-status-value">
+                                        ${item.quantidade}
+                                        <small>${percentual}%</small>
+                                    </span>
+                                </div>
+
+                                <div class="operation-status-track">
+                                    <span
+                                        class="operation-status-fill"
+                                        style="--status-width:${percentual}%"
+                                    ></span>
+                                </div>
+                            </div>
+                        `;
+                    })
+                    .join("");
+
+        }
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
     }
 
     // =================================================
@@ -1430,9 +1858,9 @@ function atualizarGraficosDashboard() {
                             label: "Operações",
                             data: dadosTurnos,
                             backgroundColor: [
-                                "#1c5796",
-                                "#4d7eb3",
-                                "#8ca9c7"
+                                "#6240af",
+                                "#8657dd",
+                                "#b995f2"
                             ],
                             borderRadius: 7,
                             maxBarThickness: 52
@@ -1454,7 +1882,7 @@ function atualizarGraficosDashboard() {
                                 precision: 0
                             },
                             grid: {
-                                color: "#edf0f4"
+                                color: "#eeeaf3"
                             }
                         },
                         x: {
@@ -1508,8 +1936,8 @@ function atualizarGraficosDashboard() {
                         {
                             label: "Veículos utilizados",
                             data: utilizacaoPorDia,
-                            borderColor: "#1c5796",
-                            backgroundColor: "rgba(28, 87, 150, 0.10)",
+                            borderColor: "#8657dd",
+                            backgroundColor: "rgba(134, 87, 221, 0.10)",
                             fill: true,
                             tension: 0.35,
                             borderWidth: 2,
@@ -1537,7 +1965,7 @@ function atualizarGraficosDashboard() {
                                 precision: 0
                             },
                             grid: {
-                                color: "#edf0f4"
+                                color: "#eeeaf3"
                             }
                         },
                         x: {
@@ -1625,7 +2053,7 @@ function atualizarGraficosDashboard() {
                         {
                             label: "Manutenções",
                             data: dadosManutencoesMes,
-                            backgroundColor: "#e5a11a",
+                            backgroundColor: "#8657dd",
                             borderRadius: 7,
                             maxBarThickness: 55
                         }
@@ -1646,7 +2074,7 @@ function atualizarGraficosDashboard() {
                                 precision: 0
                             },
                             grid: {
-                                color: "#edf0f4"
+                                color: "#eeeaf3"
                             }
                         },
                         x: {
@@ -1759,7 +2187,7 @@ function atualizarGraficosDashboard() {
                                     precision: 0
                                 },
                                 grid: {
-                                    color: "#edf0f4"
+                                    color: "#eeeaf3"
                                 }
                             },
                             y: {
@@ -1835,7 +2263,7 @@ function renderizarVeiculos(
                     <span
                         class="badge badge-maintenance"
                     >
-                        🛠 Em manutenção
+                        Em manutenção
                     </span>
 
                 `;
@@ -2222,7 +2650,7 @@ function renderizarFrotaCompleta(
                     <span
                         class="badge badge-maintenance"
                     >
-                        🛠 Em manutenção
+                        Em manutenção
                     </span>
 
                 `;
@@ -2819,6 +3247,9 @@ function aplicarFiltrosMotoristas() {
         ||
         "";
 
+    const buscaNumerica =
+        somenteDigitos(busca);
+
     const resultado =
         motoristas.filter(
 
@@ -2846,6 +3277,27 @@ function aplicarFiltrosMotoristas() {
                             .includes(
                                 busca
                             )
+                    )
+
+                    ||
+
+                    (
+                        buscaNumerica
+                        &&
+                        motorista.cpf
+                        &&
+                        somenteDigitos(motorista.cpf)
+                            .includes(buscaNumerica)
+                    )
+
+                    ||
+
+                    (
+                        motorista.cnh
+                        &&
+                        motorista.cnh
+                            .toLowerCase()
+                            .includes(busca)
                     );
 
                 const statusMotorista =
@@ -2914,7 +3366,7 @@ function renderizarMotoristas(
             <tr>
 
                 <td
-                    colspan="5"
+                    colspan="6"
                     class="loading"
                 >
                     Nenhum motorista encontrado.
@@ -2976,23 +3428,31 @@ function renderizarMotoristas(
                 </td>
 
                 <td>
+                    <span class="cpf-value">
+                        ${escaparHTML(formatarCpfTabela(motorista.cpf))}
+                    </span>
+                </td>
 
+                <td>
                     ${escaparHTML(
                         motorista.telefone
                         ||
                         "Não informado"
                     )}
-
                 </td>
 
                 <td>
-
-                    ${escaparHTML(
-                        motorista.observacao
-                        ||
-                        "—"
-                    )}
-
+                    ${(() => {
+                        const cnhStatus = situacaoCnh(motorista);
+                        return `
+                            <div class="cnh-cell">
+                                <strong>${escaparHTML(motorista.cnh || "Não informada")}</strong>
+                                <small class="${cnhStatus.classe}">
+                                    ${escaparHTML(cnhStatus.texto)}
+                                </small>
+                            </div>
+                        `;
+                    })()}
                 </td>
 
                 <td>
@@ -3167,6 +3627,18 @@ function atualizarSelectsOperacao() {
 
         );
 
+    if (operationHelper) {
+        operationHelper.innerHTML = '<option value="">Sem ajudante</option>';
+        ajudantes
+            .filter(item => item.ativo)
+            .forEach(item => {
+                const option = document.createElement("option");
+                option.value = item.id;
+                option.textContent = item.nome;
+                operationHelper.appendChild(option);
+            });
+    }
+
 }
 
 function aplicarFiltrosOperacao() {
@@ -3258,7 +3730,7 @@ function renderizarOperacoes(
             <tr>
 
                 <td
-                    colspan="6"
+                    colspan="7"
                     class="loading"
                 >
                     Nenhum registro encontrado.
@@ -3284,6 +3756,11 @@ function renderizarOperacoes(
             const motorista =
                 buscarMotorista(
                     operacao.motorista_id
+                );
+
+            const ajudante =
+                buscarAjudante(
+                    operacao.ajudante_id
                 );
 
             const configuracaoStatus =
@@ -3331,6 +3808,10 @@ function renderizarOperacoes(
                         "—"
                     }
 
+                </td>
+
+                <td>
+                    ${ajudante ? ajudante.nome : "—"}
                 </td>
 
                 <td>
@@ -3540,7 +4021,7 @@ function renderizarVeiculosSemClassificacao(
                     <span
                         class="badge badge-maintenance"
                     >
-                        ⚠️ Pendente
+                        Pendente
                     </span>
 
                 </td>
@@ -3691,7 +4172,7 @@ async function carregarVeiculosSemClassificacao() {
             await fetch(
 
                 (
-                    "/coleta/veiculos-sem-registro?"
+                    "/operacoes/veiculos-sem-registro?"
                     +
                     parametros.toString()
                 )
@@ -4050,7 +4531,7 @@ classifyVehicleForm?.addEventListener(
                 await fetch(
 
                     (
-                        `/coleta/veiculos/${vehicleId}`
+                        `/operacoes/veiculos/${vehicleId}/classificar`
                         +
                         "/classificar"
                     ),
@@ -4177,6 +4658,8 @@ function mostrarTela(
 
         driversView,
 
+        helpersView,
+
         maintenanceView,
 
         operationsView,
@@ -4192,6 +4675,8 @@ function mostrarTela(
         menuFleet,
 
         menuDrivers,
+
+        menuHelpers,
 
         menuMaintenance,
 
@@ -4283,6 +4768,22 @@ menuDrivers?.addEventListener(
 
 );
 
+menuHelpers?.addEventListener(
+
+    "click",
+
+    () =>
+
+        mostrarTela(
+
+            helpersView,
+
+            menuHelpers
+
+        )
+
+);
+
 menuFleet?.addEventListener(
 
     "click",
@@ -4354,6 +4855,8 @@ menuPanorama?.addEventListener(
             menuPanorama
 
         );
+
+        carregarConfiguracaoPanorama();
 
     }
 
@@ -4594,7 +5097,7 @@ fleetTable?.addEventListener(
                 "reativar";
 
             const confirmar =
-                window.confirm(
+                await confirmarAcao(
 
                     `Deseja ${acao} o veículo ${veiculo.placa}?`
 
@@ -4658,7 +5161,7 @@ fleetTable?.addEventListener(
 
             } catch (error) {
 
-                alert(
+                mostrarToast(
                     error.message
                 );
 
@@ -4673,73 +5176,12 @@ fleetTable?.addEventListener(
                 "delete-vehicle"
             )
         ) {
+            await excluirVeiculo(
+                vehicleId,
+                veiculo
+            );
 
-            if (!veiculo) {
-
-                return;
-
-            }
-
-            const confirmar =
-                window.confirm(
-
-                    (
-                        `Deseja excluir o veículo ${veiculo.placa}? `
-                        +
-                        "A exclusão só será permitida se ele não possuir histórico."
-                    )
-
-                );
-
-            if (!confirmar) {
-
-                return;
-
-            }
-
-            try {
-
-                const response =
-                    await fetch(
-
-                        `/veiculos/${vehicleId}`,
-
-                        {
-
-                            method:
-                                "DELETE"
-
-                        }
-
-                    );
-
-                if (!response.ok) {
-
-                    const data =
-                        await response.json();
-
-                    throw new Error(
-
-                        data.detail
-
-                        ||
-
-                        "Não foi possível excluir o veículo."
-
-                    );
-
-                }
-
-                await carregarDados();
-
-            } catch (error) {
-
-                alert(
-                    error.message
-                );
-
-            }
-
+            return;
         }
 
     }
@@ -4908,15 +5350,6 @@ function abrirModalEditarVeiculo(
 
     editVehiclePlate.value =
         veiculo.placa;
-
-    garantirOpcaoSelect(
-
-        editVehicleType,
-
-        veiculo.tipo
-
-    );
-
     editVehicleType.value =
         veiculo.tipo
         ||
@@ -5117,6 +5550,106 @@ editVehicleForm?.addEventListener(
     }
 
 );
+
+
+async function excluirVeiculo(
+    vehicleId,
+    veiculo
+) {
+    if (!vehicleId || !veiculo) {
+        return;
+    }
+
+    const confirmar = await confirmarAcao(
+        `Deseja excluir o veículo ${veiculo.placa} da base? Se houver histórico, o Ylume Ops oferecerá a opção de arquivá-lo sem apagar operações e manutenções anteriores.`,
+        {
+            titulo: "Excluir veículo",
+            confirmarTexto: "Excluir",
+            perigo: true
+        }
+    );
+
+    if (!confirmar) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `/veiculos/${vehicleId}`,
+            { method: "DELETE" }
+        );
+
+        if (response.ok) {
+            fecharModalEditarVeiculo();
+            await carregarDados();
+            mostrarToast("Veículo excluído com sucesso.", "success");
+            return;
+        }
+
+        const data = await response.json();
+
+        if (response.status === 409) {
+            const arquivar = await confirmarAcao(
+                "Este veículo possui histórico de operação ou manutenção. Você pode arquivá-lo para removê-lo da frota ativa sem perder os registros anteriores.",
+                {
+                    eyebrow: "HISTÓRICO PRESERVADO",
+                    titulo: "Arquivar veículo?",
+                    confirmarTexto: "Arquivar veículo"
+                }
+            );
+
+            if (!arquivar) {
+                return;
+            }
+
+            const responseArquivar = await fetch(
+                `/veiculos/${vehicleId}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ ativo: false })
+                }
+            );
+
+            if (!responseArquivar.ok) {
+                const erro = await responseArquivar.json();
+                throw new Error(
+                    erro.detail || "Não foi possível arquivar o veículo."
+                );
+            }
+
+            fecharModalEditarVeiculo();
+            await carregarDados();
+            mostrarToast("Veículo arquivado. O histórico foi preservado.", "success");
+            return;
+        }
+
+        throw new Error(
+            data.detail || "Não foi possível excluir o veículo."
+        );
+    } catch (error) {
+        mostrarToast(error.message);
+    }
+}
+
+
+deleteVehicleFromModal?.addEventListener(
+    "click",
+    async () => {
+
+        const vehicleId =
+            Number(editVehicleId.value);
+
+        await excluirVeiculo(
+            vehicleId,
+            buscarVeiculo(vehicleId)
+        );
+
+    }
+);
+
 
 // HISTÓRICO DO VEÍCULO
 
@@ -5497,7 +6030,7 @@ async function abrirHistoricoVeiculo(
                             <div class="vehicle-history-item-header">
 
                                 <strong>
-                                    🛠 ${
+                                    ${
                                         finalizada
                                         ?
                                         "Manutenção finalizada"
@@ -5834,8 +6367,26 @@ function abrirModalEditarMotorista(
     editDriverName.value =
         motorista.nome;
 
+    editDriverCpf.value =
+        formatarCPF(motorista.cpf);
+
     editDriverPhone.value =
         motorista.telefone
+        ||
+        "";
+
+    editDriverCnh.value =
+        motorista.cnh
+        ||
+        "";
+
+    editDriverCnhCategory.value =
+        motorista.categoria_cnh
+        ||
+        "";
+
+    editDriverCnhExpiry.value =
+        motorista.validade_cnh
         ||
         "";
 
@@ -5937,9 +6488,32 @@ editDriverForm?.addEventListener(
                                     editDriverName.value
                                         .trim(),
 
+                                cpf:
+                                    somenteDigitos(editDriverCpf.value)
+                                    ||
+                                    null,
+
                                 telefone:
                                     editDriverPhone.value
                                         .trim()
+                                    ||
+                                    null,
+
+                                cnh:
+                                    editDriverCnh.value
+                                        .trim()
+                                    ||
+                                    null,
+
+                                categoria_cnh:
+                                    editDriverCnhCategory.value
+                                        .trim()
+                                        .toUpperCase()
+                                    ||
+                                    null,
+
+                                validade_cnh:
+                                    editDriverCnhExpiry.value
                                     ||
                                     null,
 
@@ -6419,9 +6993,32 @@ driverForm?.addEventListener(
                                     driverName.value
                                         .trim(),
 
+                                cpf:
+                                    somenteDigitos(driverCpf.value)
+                                    ||
+                                    null,
+
                                 telefone:
                                     driverPhone.value
                                         .trim()
+                                    ||
+                                    null,
+
+                                cnh:
+                                    driverCnh.value
+                                        .trim()
+                                    ||
+                                    null,
+
+                                categoria_cnh:
+                                    driverCnhCategory.value
+                                        .trim()
+                                        .toUpperCase()
+                                    ||
+                                    null,
+
+                                validade_cnh:
+                                    driverCnhExpiry.value
                                     ||
                                     null,
 
@@ -6466,6 +7063,14 @@ driverForm?.addEventListener(
     }
 
 );
+
+driverCpf?.addEventListener("input", () => {
+    driverCpf.value = formatarCPF(driverCpf.value);
+});
+
+editDriverCpf?.addEventListener("input", () => {
+    editDriverCpf.value = formatarCPF(editDriverCpf.value);
+});
 
 // AÇÕES DA TABELA DE MOTORISTAS
 
@@ -6550,7 +7155,7 @@ driversTable?.addEventListener(
                 "reativar";
 
             const confirmar =
-                window.confirm(
+                await confirmarAcao(
 
                     `Deseja ${acao} o motorista ${motorista.nome}?`
 
@@ -6614,7 +7219,7 @@ driversTable?.addEventListener(
 
             } catch (error) {
 
-                alert(
+                mostrarToast(
                     error.message
                 );
 
@@ -6631,72 +7236,236 @@ driversTable?.addEventListener(
                 "delete-driver"
             )
         ) {
+            await excluirMotorista(
+                driverId,
+                motorista
+            );
 
-            const confirmar =
-                window.confirm(
-
-                    (
-                        `Deseja excluir o motorista ${motorista.nome}? `
-                        +
-                        "A exclusão só será permitida se ele não possuir histórico."
-                    )
-
-                );
-
-            if (!confirmar) {
-
-                return;
-
-            }
-
-            try {
-
-                const response =
-                    await fetch(
-
-                        `/motoristas/${driverId}`,
-
-                        {
-
-                            method:
-                                "DELETE"
-
-                        }
-
-                    );
-
-                if (!response.ok) {
-
-                    const data =
-                        await response.json();
-
-                    throw new Error(
-
-                        data.detail
-
-                        ||
-
-                        "Não foi possível excluir o motorista."
-
-                    );
-
-                }
-
-                await carregarDados();
-
-            } catch (error) {
-
-                alert(
-                    error.message
-                );
-
-            }
-
+            return;
         }
 
     }
 
 );
+
+// AJUDANTES
+
+function atualizarResumoAjudantes() {
+    if (!helpersRegistered) return;
+    const hoje = hojeISO();
+    helpersRegistered.textContent = ajudantes.length;
+    helpersActive.textContent = ajudantes.filter(item => item.ativo).length;
+    helpersInactive.textContent = ajudantes.filter(item => !item.ativo).length;
+    helpersOperationsToday.textContent = operacoes.filter(
+        item => item.data === hoje && item.ajudante_id
+    ).length;
+}
+
+function aplicarFiltrosAjudantes() {
+    if (!helpersTable) return;
+    const busca = (helperSearchInput?.value || "").trim().toLowerCase();
+    const statusFiltro = helperStatusFilter?.value || "";
+    const lista = ajudantes.filter(item => {
+        const texto = `${item.nome || ""} ${item.cpf || ""}`.toLowerCase();
+        const statusOk = !statusFiltro || (
+            statusFiltro === "ATIVO" ? item.ativo : !item.ativo
+        );
+        return (!busca || texto.includes(busca)) && statusOk;
+    });
+    renderizarAjudantes(lista);
+}
+
+function renderizarAjudantes(lista) {
+    if (!helpersTable) return;
+    helpersTable.innerHTML = "";
+    if (!lista.length) {
+        helpersTable.innerHTML = '<tr><td colspan="5" class="loading">Nenhum ajudante encontrado.</td></tr>';
+        return;
+    }
+    lista.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td><strong>${escaparHTML(item.nome)}</strong></td>
+            <td>${item.cpf ? formatarCPF(item.cpf) : "Não informado"}</td>
+            <td>${escaparHTML(item.telefone || "Não informado")}</td>
+            <td><span class="badge ${item.ativo ? "badge-active" : "badge-inactive"}">${item.ativo ? "Ativo" : "Inativo"}</span></td>
+            <td><div class="table-actions">
+                <button class="action-button edit-helper" data-helper-id="${item.id}" type="button">Editar</button>
+                <button class="action-button toggle-helper" data-helper-id="${item.id}" type="button">${item.ativo ? "Inativar" : "Reativar"}</button>
+                <button class="action-button action-danger delete-helper" data-helper-id="${item.id}" type="button">Excluir</button>
+            </div></td>`;
+        helpersTable.appendChild(row);
+    });
+}
+
+function abrirModalAjudante() {
+    helperForm?.reset();
+    if (helperFormMessage) helperFormMessage.textContent = "";
+    helperModal?.classList.add("active");
+    document.body.classList.add("modal-open");
+}
+
+function fecharModalAjudante() {
+    helperModal?.classList.remove("active");
+    document.body.classList.remove("modal-open");
+}
+
+function abrirModalEditarAjudante(item) {
+    editHelperId.value = item.id;
+    editHelperName.value = item.nome || "";
+    editHelperCpf.value = item.cpf ? formatarCPF(item.cpf) : "";
+    editHelperPhone.value = item.telefone || "";
+    editHelperObservation.value = item.observacao || "";
+    editHelperStatus.value = String(Boolean(item.ativo));
+    editHelperFormMessage.textContent = "";
+    editHelperModal.classList.add("active");
+    document.body.classList.add("modal-open");
+}
+
+function fecharModalEditarAjudante() {
+    editHelperModal?.classList.remove("active");
+    document.body.classList.remove("modal-open");
+}
+
+openHelperModal?.addEventListener("click", abrirModalAjudante);
+closeHelperModal?.addEventListener("click", fecharModalAjudante);
+cancelHelperModal?.addEventListener("click", fecharModalAjudante);
+closeEditHelperModal?.addEventListener("click", fecharModalEditarAjudante);
+cancelEditHelperModal?.addEventListener("click", fecharModalEditarAjudante);
+helperSearchInput?.addEventListener("input", aplicarFiltrosAjudantes);
+helperStatusFilter?.addEventListener("change", aplicarFiltrosAjudantes);
+helperCpf?.addEventListener("input", () => {
+    helperCpf.value = formatarCPF(helperCpf.value);
+});
+editHelperCpf?.addEventListener("input", () => {
+    editHelperCpf.value = formatarCPF(editHelperCpf.value);
+});
+
+helperForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+    try {
+        const response = await fetch("/ajudantes", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                nome: helperName.value.trim(),
+                cpf: helperCpf.value.trim() || null,
+                telefone: helperPhone.value.trim() || null,
+                observacao: helperObservation.value.trim() || null,
+                ativo: true
+            })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || "Não foi possível cadastrar o ajudante.");
+        }
+        fecharModalAjudante();
+        await carregarDados();
+        mostrarToast("Ajudante cadastrado com sucesso.", "success");
+    } catch (error) {
+        helperFormMessage.textContent = error.message;
+        helperFormMessage.className = "form-message error";
+    }
+});
+
+editHelperForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const id = Number(editHelperId.value);
+    try {
+        const response = await fetch(`/ajudantes/${id}`, {
+            method: "PATCH",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                nome: editHelperName.value.trim(),
+                cpf: editHelperCpf.value.trim() || null,
+                telefone: editHelperPhone.value.trim() || null,
+                observacao: editHelperObservation.value.trim() || null,
+                ativo: editHelperStatus.value === "true"
+            })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || "Não foi possível atualizar o ajudante.");
+        }
+        fecharModalEditarAjudante();
+        await carregarDados();
+        mostrarToast("Ajudante atualizado com sucesso.", "success");
+    } catch (error) {
+        editHelperFormMessage.textContent = error.message;
+        editHelperFormMessage.className = "form-message error";
+    }
+});
+
+async function excluirAjudante(id, item) {
+    const confirmar = await confirmarAcao(
+        `Deseja excluir ${item.nome}?`,
+        {titulo: "Excluir ajudante", confirmarTexto: "Excluir", perigo: true}
+    );
+    if (!confirmar) return;
+
+    const response = await fetch(`/ajudantes/${id}`, {method: "DELETE"});
+    if (response.ok) {
+        fecharModalEditarAjudante();
+        await carregarDados();
+        mostrarToast("Ajudante excluído com sucesso.", "success");
+        return;
+    }
+
+    const data = await response.json();
+    if (response.status === 409) {
+        const arquivar = await confirmarAcao(
+            `${data.detail} Deseja arquivar agora?`,
+            {titulo: "Arquivar ajudante", confirmarTexto: "Arquivar"}
+        );
+        if (!arquivar) return;
+        const patch = await fetch(`/ajudantes/${id}`, {
+            method: "PATCH",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ativo: false})
+        });
+        if (!patch.ok) throw new Error("Não foi possível arquivar o ajudante.");
+        fecharModalEditarAjudante();
+        await carregarDados();
+        mostrarToast("Ajudante arquivado; o histórico foi preservado.", "success");
+        return;
+    }
+    throw new Error(data.detail || "Não foi possível excluir o ajudante.");
+}
+
+deleteHelperFromModal?.addEventListener("click", () => {
+    const id = Number(editHelperId.value);
+    const item = buscarAjudante(id);
+    if (item) excluirAjudante(id, item).catch(error => mostrarToast(error.message));
+});
+
+helpersTable?.addEventListener("click", async event => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    const id = Number(button.dataset.helperId);
+    const item = buscarAjudante(id);
+    if (!item) return;
+
+    if (button.classList.contains("edit-helper")) {
+        abrirModalEditarAjudante(item);
+        return;
+    }
+    if (button.classList.contains("delete-helper")) {
+        excluirAjudante(id, item).catch(error => mostrarToast(error.message));
+        return;
+    }
+    if (button.classList.contains("toggle-helper")) {
+        const response = await fetch(`/ajudantes/${id}`, {
+            method: "PATCH",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ativo: !item.ativo})
+        });
+        if (!response.ok) {
+            mostrarToast("Não foi possível alterar o cadastro.");
+            return;
+        }
+        await carregarDados();
+    }
+});
 
 // MANUTENÇÃO
 
@@ -7412,6 +8181,42 @@ closeMaintenanceDetailsButton?.addEventListener(
 
 // MODAL OPERAÇÃO
 
+function abrirModalImportacaoOperacao() {
+
+    importOperationModal?.classList.add(
+        "active"
+    );
+
+}
+
+
+function fecharModalImportacaoOperacao() {
+
+    importOperationModal?.classList.remove(
+        "active"
+    );
+
+}
+
+
+openImportOperationModal?.addEventListener(
+    "click",
+    abrirModalImportacaoOperacao
+);
+
+
+closeImportOperationModal?.addEventListener(
+    "click",
+    fecharModalImportacaoOperacao
+);
+
+
+cancelImportOperationModal?.addEventListener(
+    "click",
+    fecharModalImportacaoOperacao
+);
+
+
 function abrirModalOperacao() {
 
     operationDate.value =
@@ -7515,6 +8320,11 @@ operationForm?.addEventListener(
                                     :
                                     null,
 
+                                ajudante_id:
+                                    operationHelper && operationHelper.value
+                                    ? Number(operationHelper.value)
+                                    : null,
+
                                 rota_id:
                                     operationRoute.value
                                         .trim()
@@ -7604,7 +8414,7 @@ operationsTable?.addEventListener(
         }
 
         const confirmar =
-            window.confirm(
+            await confirmarAcao(
 
                 "Deseja excluir este registro da operação?"
 
@@ -7632,7 +8442,7 @@ operationsTable?.addEventListener(
 
         if (!response.ok) {
 
-            alert(
+            mostrarToast(
                 "Não foi possível excluir o registro."
             );
 
@@ -7647,6 +8457,53 @@ operationsTable?.addEventListener(
 );
 
 // PANORAMA
+
+async function carregarConfiguracaoPanorama() {
+    try {
+        const response = await fetch("/configuracao-panorama");
+        if (!response.ok) return;
+        const config = await response.json();
+        if (panoramaUnit) panoramaUnit.value = config.unidade || "";
+        if (panoramaOperator) panoramaOperator.value = config.operador || "";
+    } catch (error) {
+        console.error("Erro ao carregar configuração do panorama:", error);
+    }
+}
+
+savePanoramaConfigButton?.addEventListener("click", async () => {
+    try {
+        const response = await fetch("/configuracao-panorama", {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                unidade: panoramaUnit?.value || "",
+                operador: panoramaOperator?.value || ""
+            })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || "Não foi possível salvar o cabeçalho.");
+        }
+        mostrarToast("Cabeçalho do panorama salvo.", "success");
+    } catch (error) {
+        mostrarToast(error.message);
+    }
+});
+
+document.querySelectorAll(".emoji-insert-button").forEach(button => {
+    button.addEventListener("click", () => {
+        if (!panoramaText) return;
+        const emoji = button.dataset.emoji || "";
+        const inicio = panoramaText.selectionStart ?? panoramaText.value.length;
+        const fim = panoramaText.selectionEnd ?? inicio;
+        panoramaText.value =
+            panoramaText.value.slice(0, inicio) +
+            emoji +
+            panoramaText.value.slice(fim);
+        panoramaText.focus();
+        panoramaText.selectionStart = panoramaText.selectionEnd = inicio + emoji.length;
+    });
+});
 
 async function gerarPanorama() {
 
@@ -7726,7 +8583,7 @@ async function gerarPanorama() {
 
         }
 
-        panoramaText.textContent =
+        panoramaText.value =
             resultado.texto;
 
         panoramaTotalVehicles.textContent =
@@ -7737,6 +8594,10 @@ async function gerarPanorama() {
 
         panoramaOperations.textContent =
             resultado.veiculos_operacao;
+
+        if (panoramaIdle) {
+            panoramaIdle.textContent = resultado.veiculos_ociosos;
+        }
 
         copyPanoramaButton.disabled =
             false;
@@ -7778,7 +8639,7 @@ generatePanoramaButton?.addEventListener(
 async function copiarPanorama() {
 
     const texto =
-        panoramaText.textContent;
+        panoramaText.value;
 
     if (!texto) {
 
@@ -7799,7 +8660,7 @@ async function copiarPanorama() {
             "form-message success";
 
         copyPanoramaButton.textContent =
-            "✓ Copiado";
+            "Copiado";
 
         setTimeout(
 
@@ -7883,6 +8744,11 @@ const modais = [
     ],
 
     [
+        importOperationModal,
+        fecharModalImportacaoOperacao
+    ],
+
+    [
         operationModal,
         fecharModalOperacao
     ],
@@ -7951,6 +8817,10 @@ document.addEventListener(
 
         fecharModalEditarMotorista();
 
+        fecharModalAjudante();
+
+        fecharModalEditarAjudante();
+
         fecharHistoricoMotorista();
 
         fecharModalManutencao();
@@ -7983,363 +8853,12 @@ if (panoramaDate) {
 
 }
 
-// SINCRONIZAÇÃO LOCAL
-
-function atualizarStatusSincronizacao(
-    dados
-) {
-
-    if (
-        !syncStatusCard
-        ||
-        !syncOperationButton
-    ) {
-
-        return;
-
-    }
-
-
-    const statusAtual =
-        dados.status
-        ||
-        "DESCONHECIDO";
-
-
-    const configuracoes = {
-
-        AGUARDANDO_PAGINA: {
-            titulo:
-                "Abrindo Hawk Collector",
-
-            icone:
-                "↗"
-        },
-
-
-        COLETANDO: {
-            titulo:
-                "Coletando dados",
-
-            icone:
-                "↻"
-        },
-
-
-        CONCLUIDO: {
-            titulo:
-                "Sincronização concluída",
-
-            icone:
-                "✓"
-        },
-
-
-        ERRO: {
-            titulo:
-                "Erro na sincronização",
-
-            icone:
-                "×"
-        }
-
-    };
-
-
-    const configuracao =
-
-        configuracoes[
-            statusAtual
-        ]
-
-        ||
-
-        {
-            titulo:
-                "Sincronização",
-
-            icone:
-                "↻"
-        };
-
-
-    syncStatusCard.hidden =
-        false;
-
-
-    syncStatusCard.dataset.status =
-        statusAtual;
-
-
-    if (syncStatusTitle) {
-
-        syncStatusTitle.textContent =
-            configuracao.titulo;
-
-    }
-
-
-    if (syncStatusIcon) {
-
-        syncStatusIcon.textContent =
-            configuracao.icone;
-
-    }
-
-
-    if (syncStatusMessage) {
-
-        syncStatusMessage.textContent =
-
-            dados.mensagem
-
-            ||
-
-            "Aguardando informações do Hawk Collector.";
-
-    }
-
-
-    const processoAtivo =
-
-        dados.processo_ativo
-        ===
-        true;
-
-
-    syncOperationButton.disabled =
-        processoAtivo;
-
-
-    syncOperationButton.textContent =
-
-        processoAtivo
-
-        ?
-
-        "Sincronizando..."
-
-        :
-
-        "Sincronizar operação";
-
-
-    syncStatusCard.classList.toggle(
-
-        "sync-active",
-
-        processoAtivo
-
-    );
-
-}
-
-
-// ATUALIZAR DADOS ENQUANTO O COLETOR LOCAL TRABALHA
-
-function acompanharColetorLocal() {
-
-    if (
-        atualizacaoColetorLocalInterval
-    ) {
-
-        clearInterval(
-            atualizacaoColetorLocalInterval
-        );
-
-    }
-
-
-    let tentativas =
-        0;
-
-
-    atualizacaoColetorLocalInterval =
-        setInterval(
-
-            async () => {
-
-                tentativas++;
-
-
-                await carregarDados();
-
-
-                if (
-                    tentativas
-                    >=
-                    24
-                ) {
-
-                    clearInterval(
-                        atualizacaoColetorLocalInterval
-                    );
-
-
-                    atualizacaoColetorLocalInterval =
-                        null;
-
-
-                    atualizarStatusSincronizacao({
-
-                        status:
-                            "CONCLUIDO",
-
-                        mensagem:
-                            (
-                                "Os dados disponíveis foram "
-                                +
-                                "recarregados no Hawk."
-                            ),
-
-                        processo_ativo:
-                            false
-
-                    });
-
-                }
-
-            },
-
-            5000
-
-        );
-
-}
-
-
-// INICIAR HAWK COLLECTOR NO WINDOWS
-
-syncOperationButton?.addEventListener(
-
-    "click",
-
-    () => {
-
-        const dataOperacao =
-
-            operationFilterDate
-                ?.value
-
-            ||
-
-            hojeISO();
-
-
-        const turno =
-
-            operationFilterShift
-                ?.value
-
-            ||
-
-            "";
-
-
-        if (!turno) {
-
-            atualizarStatusSincronizacao({
-
-                status:
-                    "ERRO",
-
-                mensagem:
-                    (
-                        "Selecione Manhã, Tarde ou Noite "
-                        +
-                        "antes de iniciar a sincronização."
-                    ),
-
-                processo_ativo:
-                    false
-
-            });
-
-
-            return;
-
-        }
-
-
-        const parametros =
-            new URLSearchParams({
-
-                turno:
-                    turno,
-
-                data:
-                    dataOperacao
-
-            });
-
-
-        const urlColetor =
-            (
-                "hawk://sync?"
-                +
-                parametros.toString()
-            );
-
-
-        atualizarStatusSincronizacao({
-
-            status:
-                "AGUARDANDO_PAGINA",
-
-            mensagem:
-                (
-                    "Abrindo o Hawk Collector neste computador. "
-                    +
-                    "Se o navegador pedir confirmação, permita a abertura."
-                ),
-
-            processo_ativo:
-                true
-
-        });
-
-
-        window.location.href =
-            urlColetor;
-
-
-        setTimeout(
-
-            () => {
-
-                atualizarStatusSincronizacao({
-
-                    status:
-                        "COLETANDO",
-
-                    mensagem:
-                        (
-                            "No navegador do Mercado Livre, acesse "
-                            +
-                            "Monitoramento Last Mile. "
-                            +
-                            "O Hawk será atualizado automaticamente."
-                        ),
-
-                    processo_ativo:
-                        true
-
-                });
-
-            },
-
-            1500
-
-        );
-
-
-        acompanharColetorLocal();
-
-    }
-
-);
+// IMPORTAÇÃO INTELIGENTE
+// A entrada de dados será feita por upload/colagem,
+// com conferência antes da persistência.
 
 
 // CARGA INICIAL DO SISTEMA
 
+carregarConfiguracaoPanorama();
 carregarDados();

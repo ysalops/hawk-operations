@@ -90,8 +90,30 @@ class Motorista(Base):
         index=True,
     )
 
+    cpf: Mapped[str | None] = mapped_column(
+        String(11),
+        unique=True,
+        nullable=True,
+        index=True,
+    )
+
     telefone: Mapped[str | None] = mapped_column(
         String(30),
+        nullable=True,
+    )
+
+    cnh: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+    )
+
+    categoria_cnh: Mapped[str | None] = mapped_column(
+        String(10),
+        nullable=True,
+    )
+
+    validade_cnh: Mapped[date | None] = mapped_column(
+        Date,
         nullable=True,
     )
 
@@ -123,6 +145,21 @@ class Motorista(Base):
     operacoes: Mapped[list["Operacao"]] = relationship(
         back_populates="motorista",
     )
+
+
+class Ajudante(Base):
+    __tablename__ = "ajudantes"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    nome: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    cpf: Mapped[str | None] = mapped_column(String(11), unique=True, nullable=True, index=True)
+    telefone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    observacao: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+
+    operacoes: Mapped[list["Operacao"]] = relationship(back_populates="ajudante")
 
 
 class Manutencao(Base):
@@ -243,6 +280,12 @@ class Operacao(Base):
         index=True,
     )
 
+    ajudante_id: Mapped[int | None] = mapped_column(
+        ForeignKey("ajudantes.id"),
+        nullable=True,
+        index=True,
+    )
+
     rota_id: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
@@ -285,3 +328,16 @@ class Operacao(Base):
     motorista: Mapped["Motorista | None"] = relationship(
         back_populates="operacoes",
     )
+
+    ajudante: Mapped["Ajudante | None"] = relationship(
+        back_populates="operacoes",
+    )
+
+
+class PanoramaConfiguracao(Base):
+    __tablename__ = "panorama_configuracao"
+
+    id: Mapped[int] = mapped_column(primary_key=True, default=1)
+    unidade: Mapped[str] = mapped_column(String(120), default="SSP17: SBC", nullable=False)
+    operador: Mapped[str] = mapped_column(String(150), default="", nullable=False)
+    atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
