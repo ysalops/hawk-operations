@@ -1,32 +1,20 @@
-# Ylume Ops — V6.1
+# Ylume Ops — V6.2
 
-Ajuste de segurança e revisão da Importação Inteligente.
+Versão de acabamento da Importação Inteligente.
 
-## O que mudou
+## Novidades
 
-- Placas repetidas no mesmo lote são consolidadas antes da confirmação.
-- Se uma placa aparecer na frota e também em manutenção, a manutenção é priorizada e a linha fica destacada como conflito para revisão.
-- O exemplo de 18/07/2026 passa de 51 linhas brutas para 49 veículos únicos, mantendo 11 manutenções.
-- TBF2D48 e TBF2C96 ficam destacadas porque aparecem como carregando e também em manutenção no texto-fonte.
-- O campo Turno ganhou `Geral / não informado`.
-- Quando o texto contém uma data, a data lida da fonte é priorizada; a data do formulário é usada como fallback.
-- Linhas com baixa confiança ou conflito recebem destaque visual e aviso `Revisar`/`Conferir`.
-- `Permitir substituir registros criados manualmente` é sempre desmarcado ao abrir/reiniciar a importação.
-- O backend também consolida duplicatas novamente no momento da confirmação, como proteção adicional.
+- Filtro **Somente itens para revisar** na pré-visualização.
+- Contadores de registros prontos e registros que merecem revisão.
+- Registros com status **Impedido** agora exigem motivo antes da confirmação.
+- Validação do motivo ocorre tanto no navegador quanto no backend.
+- A primeira pendência obrigatória é destacada e recebe foco automaticamente.
+- A proteção de registros manuais continua desmarcada por padrão.
+- Mantidas as consolidações de placas duplicadas e conflitos de manutenção da V6.1.
 
-## Arquivos alterados
+## Instalação local
 
-- `backend/main.py`
-- `backend/schemas.py`
-- `frontend/index.html`
-- `frontend/js/app.js`
-- `frontend/css/style.css`
-
-Não há novas dependências nesta versão.
-
-## Como aplicar localmente
-
-Substitua os arquivos correspondentes e execute:
+Substitua `backend` e `frontend` pelos arquivos desta versão e rode:
 
 ```powershell
 cd "C:\Users\Ysa Martinho\Documents\hawk-operations"
@@ -35,14 +23,8 @@ docker compose up -d --build
 Start-Process "http://127.0.0.1:8000"
 ```
 
-No navegador, use `Ctrl + F5`.
+Faça `Ctrl + F5` no navegador.
 
 ## Teste recomendado
 
-1. Operação → Importar operação → Colar texto.
-2. Cole o panorama de 18/07/2026.
-3. Use `Geral / não informado`.
-4. Clique em `Analisar dados`.
-5. O esperado é `49 veículos identificados`, `11 manutenção(ões)` e 2 conflitos destacados (TBF2D48 e TBF2C96).
-6. Revise as linhas de baixa confiança antes de confirmar.
-7. Mantenha desmarcada a opção de sobrescrever registros manuais, salvo quando houver intenção explícita de substituir esses dados.
+Abra Operação > Importar operação, analise o mesmo panorama e teste o botão **Somente itens para revisar**. Para uma linha com status `Impedido`, deixe o campo motivo vazio e tente confirmar: o sistema deve impedir a gravação e destacar a pendência.

@@ -1756,12 +1756,17 @@
 <div><span class="page-eyebrow">PRÉ-VISUALIZAÇÃO</span><h4><span id="smartImportPreviewCount">0</span> veículos identificados</h4><p>O sistema consolida placas repetidas. Linhas destacadas exigem revisão antes da confirmação.</p></div>
 <div class="smart-import-summary" id="smartImportSummary"></div>
 </div>
+<div class="smart-import-review-toolbar">
+<div class="smart-import-ready-state"><strong><span id="smartImportReadyCount">0</span> prontos</strong><span>Registros sem alerta de revisão.</span></div>
+<button aria-pressed="false" class="secondary-button smart-import-review-filter" id="smartImportReviewOnlyButton" type="button"><i data-lucide="list-filter"></i><span data-review-filter-label>Somente itens para revisar</span><strong id="smartImportReviewCount">0</strong></button>
+</div>
 <div class="table-wrapper smart-import-table-wrapper">
 <table class="smart-import-table">
 <thead><tr><th>Placa</th><th>Tipo</th><th>Motorista</th><th>Ajudante</th><th>Rota</th><th>Status</th><th>Motivo / observação</th><th>Conf.</th><th></th></tr></thead>
 <tbody id="smartImportPreviewBody"></tbody>
 </table>
 </div>
+<div class="smart-import-safety-note"><i data-lucide="shield-check"></i><span>Registros com status <strong>Impedido</strong> exigem motivo. Dados manuais existentes permanecem protegidos enquanto a opção abaixo estiver desmarcada.</span></div>
 <label class="smart-import-check smart-import-overwrite"><input id="smartImportOverwriteManual" type="checkbox"/> <span>Permitir substituir registros criados manualmente para a mesma placa/data/turno.</span></label>
 <div class="modal-actions">
 <button class="secondary-button" id="smartImportBackButton" type="button">Voltar e ajustar</button>

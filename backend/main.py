@@ -2185,6 +2185,20 @@ def confirmar_importacao_inteligente(
         for registro in registros_consolidados_dict
     ]
 
+    impedidos_sem_motivo = [
+        normalizar_placa_importacao(registro.placa) or "sem placa"
+        for registro in registros_confirmacao
+        if normalizar_status_importacao(registro.status) == "IMPEDIDO"
+        and not (limpar_texto_opcional(registro.motivo) or limpar_texto_opcional(registro.observacao))
+    ]
+    if impedidos_sem_motivo:
+        amostra = ", ".join(impedidos_sem_motivo[:5])
+        complemento = "" if len(impedidos_sem_motivo) <= 5 else f" e mais {len(impedidos_sem_motivo) - 5}"
+        raise HTTPException(
+            status_code=422,
+            detail=f"Informe o motivo dos veículos impedidos antes de confirmar: {amostra}{complemento}.",
+        )
+
     veiculos = db.scalars(select(models.Veiculo)).all()
     motoristas = db.scalars(select(models.Motorista)).all()
     ajudantes = db.scalars(select(models.Ajudante)).all()

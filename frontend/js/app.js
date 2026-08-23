@@ -782,9 +782,13 @@ const smartImportSummary = document.getElementById("smartImportSummary");
 const smartImportConfirmButton = document.getElementById("smartImportConfirmButton");
 const smartImportBackButton = document.getElementById("smartImportBackButton");
 const smartImportOverwriteManual = document.getElementById("smartImportOverwriteManual");
+const smartImportReviewOnlyButton = document.getElementById("smartImportReviewOnlyButton");
+const smartImportReviewCount = document.getElementById("smartImportReviewCount");
+const smartImportReadyCount = document.getElementById("smartImportReadyCount");
 const importAiStatus = document.getElementById("importAiStatus");
 let smartImportMode = "image";
 let smartImportRecords = [];
+let smartImportReviewOnly = false;
 
 // ELEMENTOS - VEÍCULOS SEM CLASSIFICAÇÃO
 
@@ -8213,10 +8217,17 @@ function definirMensagemImportacao(texto = "", tipo = "") {
 
 function resetarImportacaoInteligente() {
     smartImportRecords = [];
+    smartImportReviewOnly = false;
     if (smartImportOverwriteManual) smartImportOverwriteManual.checked = false;
     if (smartImportPreview) smartImportPreview.hidden = true;
     if (smartImportPreviewBody) smartImportPreviewBody.innerHTML = "";
     if (smartImportSummary) smartImportSummary.innerHTML = "";
+    if (smartImportReviewOnlyButton) {
+        smartImportReviewOnlyButton.classList.remove("active");
+        smartImportReviewOnlyButton.setAttribute("aria-pressed", "false");
+    }
+    if (smartImportReviewCount) smartImportReviewCount.textContent = "0";
+    if (smartImportReadyCount) smartImportReadyCount.textContent = "0";
     definirMensagemImportacao("");
 }
 
@@ -8313,6 +8324,57 @@ function opcoesStatusImportacao(valor) {
     return IMPORT_STATUS_OPTIONS.map(([id, nome]) => `<option value="${id}" ${id === valor ? "selected" : ""}>${nome}</option>`).join("");
 }
 
+
+function itemImportacaoPrecisaRevisao(item) {
+    return Boolean(item?.alerta) || (item?.confianca != null && item.confianca < .8);
+}
+
+function aplicarFiltroRevisaoImportacao() {
+    if (!smartImportPreviewBody) return;
+    smartImportPreviewBody.querySelectorAll("tr[data-import-row]").forEach(row => {
+        const precisaRevisao = row.dataset.needsReview === "true";
+        row.classList.toggle("review-hidden", smartImportReviewOnly && !precisaRevisao);
+    });
+    if (smartImportReviewOnlyButton) {
+        smartImportReviewOnlyButton.classList.toggle("active", smartImportReviewOnly);
+        smartImportReviewOnlyButton.setAttribute("aria-pressed", String(smartImportReviewOnly));
+        const label = smartImportReviewOnlyButton.querySelector("[data-review-filter-label]");
+        if (label) label.textContent = smartImportReviewOnly ? "Mostrar todos" : "Somente itens para revisar";
+    }
+}
+
+function validarLinhaImportacao(row, mostrarMensagem = false) {
+    if (!row) return true;
+    const status = row.querySelector('[data-field="status"]')?.value || "";
+    const observacaoInput = row.querySelector('[data-field="observacao"]');
+    const motivo = observacaoInput?.value?.trim() || "";
+    const motivoObrigatorio = status === "IMPEDIDO" && !motivo;
+    row.classList.toggle("missing-required", motivoObrigatorio);
+    if (observacaoInput) observacaoInput.classList.toggle("field-invalid", motivoObrigatorio);
+    const aviso = row.querySelector("[data-required-note]");
+    if (aviso) aviso.hidden = !motivoObrigatorio;
+    if (motivoObrigatorio && mostrarMensagem) {
+        row.classList.remove("review-hidden");
+        row.scrollIntoView({behavior: "smooth", block: "center"});
+        observacaoInput?.focus();
+    }
+    return !motivoObrigatorio;
+}
+
+function validarPreviewImportacao() {
+    const linhas = Array.from(smartImportPreviewBody?.querySelectorAll("tr[data-import-row]") || []);
+    const invalidas = linhas.filter(row => !validarLinhaImportacao(row));
+    if (!invalidas.length) return true;
+    smartImportReviewOnly = false;
+    aplicarFiltroRevisaoImportacao();
+    validarLinhaImportacao(invalidas[0], true);
+    definirMensagemImportacao(
+        `${invalidas.length} registro(s) com status Impedido precisam de um motivo antes da confirmação.`,
+        "error"
+    );
+    return false;
+}
+
 function renderizarPreviewImportacao(resultado) {
     smartImportRecords = (resultado.registros || []).map(item => ({...item}));
     if (resultado.data && smartImportDate) smartImportDate.value = resultado.data;
@@ -8327,8 +8389,12 @@ function renderizarPreviewImportacao(resultado) {
     smartImportPreviewCount.textContent = String(smartImportRecords.length);
     const baixa = smartImportRecords.filter(item => item.confianca != null && item.confianca < .8).length;
     const conflitos = smartImportRecords.filter(item => Boolean(item.alerta)).length;
+    const revisar = smartImportRecords.filter(itemImportacaoPrecisaRevisao).length;
     const manut = smartImportRecords.filter(item => item.status === "MANUTENCAO").length;
-    smartImportSummary.innerHTML = `<span>${resultado.metodo === "ia" || resultado.metodo === "ia_imagem" ? "IA" : resultado.metodo === "misto" ? "Leitura mista" : "Leitura local"}</span><span>${manut} manutenção(ões)</span>${conflitos ? `<span class="danger">${conflitos} requer revisão</span>` : ""}${baixa ? `<span class="warning">${baixa} baixa confiança</span>` : ""}`;
+    const prontos = Math.max(0, smartImportRecords.length - revisar);
+    if (smartImportReviewCount) smartImportReviewCount.textContent = String(revisar);
+    if (smartImportReadyCount) smartImportReadyCount.textContent = String(prontos);
+    smartImportSummary.innerHTML = `<span>${resultado.metodo === "ia" || resultado.metodo === "ia_imagem" ? "IA" : resultado.metodo === "misto" ? "Leitura mista" : "Leitura local"}</span><span>${manut} manutenção(ões)</span>${conflitos ? `<span class="danger">${conflitos} conflito(s)</span>` : ""}${baixa ? `<span class="warning">${baixa} baixa confiança</span>` : ""}`;
     smartImportPreviewBody.innerHTML = smartImportRecords.map((item, index) => {
         const confianca = item.confianca == null ? "—" : `${Math.round(item.confianca * 100)}%`;
         const needsReview = Boolean(item.alerta) || (item.confianca != null && item.confianca < .8);
@@ -8338,14 +8404,14 @@ function renderizarPreviewImportacao(resultado) {
             : item.confianca != null && item.confianca < .8
                 ? `<small class="import-review-note"><i data-lucide="circle-help"></i> Conferir</small>`
                 : "";
-        return `<tr data-import-row="${index}" class="${low}" ${item.alerta ? `title="${escaparHTML(item.alerta)}"` : ""}>
+        return `<tr data-import-row="${index}" data-needs-review="${needsReview}" class="${low}" ${item.alerta ? `title="${escaparHTML(item.alerta)}"` : ""}>
             <td><input data-field="placa" value="${escaparHTML(item.placa || "")}" /></td>
             <td><input data-field="tipo_veiculo" value="${escaparHTML(item.tipo_veiculo || "")}" placeholder="Tipo" /></td>
             <td><input data-field="motorista" value="${escaparHTML(item.motorista || "")}" placeholder="Motorista" /></td>
             <td><input data-field="ajudante" value="${escaparHTML(item.ajudante || "")}" placeholder="Ajudante" /></td>
             <td><input data-field="rota_id" value="${escaparHTML(item.rota_id || "")}" placeholder="Rota" /></td>
             <td><select data-field="status">${opcoesStatusImportacao(item.status || "SEM_CLASSIFICACAO")}</select></td>
-            <td><input data-field="observacao" value="${escaparHTML(item.motivo || item.observacao || "")}" placeholder="Motivo ou observação" /></td>
+            <td><div class="import-observation-field"><input data-field="observacao" value="${escaparHTML(item.motivo || item.observacao || "")}" placeholder="Motivo ou observação" /><small data-required-note hidden>Motivo obrigatório para veículo impedido.</small></div></td>
             <td class="import-confidence-cell"><span class="confidence-pill${needsReview ? " low-confidence" : ""}">${confianca}</span>${revisao}</td>
             <td><button class="icon-button danger-light" data-remove-import="${index}" title="Remover linha" type="button"><i data-lucide="trash-2"></i></button></td>
         </tr>`;
@@ -8356,6 +8422,14 @@ function renderizarPreviewImportacao(resultado) {
             renderizarPreviewImportacao({...resultado, registros: smartImportRecords});
         });
     });
+    smartImportPreviewBody.querySelectorAll("tr[data-import-row]").forEach(row => {
+        const status = row.querySelector('[data-field="status"]');
+        const observacao = row.querySelector('[data-field="observacao"]');
+        status?.addEventListener("change", () => validarLinhaImportacao(row));
+        observacao?.addEventListener("input", () => validarLinhaImportacao(row));
+        validarLinhaImportacao(row);
+    });
+    aplicarFiltroRevisaoImportacao();
     if (resultado.avisos?.length) definirMensagemImportacao(resultado.avisos.join(" "), "warning");
     else definirMensagemImportacao("Dados identificados. Revise a prévia antes de confirmar.", "success");
     if (typeof lucide !== "undefined") lucide.createIcons();
@@ -8423,6 +8497,7 @@ async function analisarImportacaoInteligente() {
 }
 
 async function confirmarImportacaoInteligente() {
+    if (!validarPreviewImportacao()) return;
     const registros = coletarPreviewEditado();
     if (!registros.length) {
         definirMensagemImportacao("Não há registros válidos para importar.", "error");
@@ -8467,6 +8542,10 @@ async function confirmarImportacaoInteligente() {
 }
 
 smartImportAnalyzeButton?.addEventListener("click", analisarImportacaoInteligente);
+smartImportReviewOnlyButton?.addEventListener("click", () => {
+    smartImportReviewOnly = !smartImportReviewOnly;
+    aplicarFiltroRevisaoImportacao();
+});
 smartImportConfirmButton?.addEventListener("click", confirmarImportacaoInteligente);
 smartImportBackButton?.addEventListener("click", () => {
     if (smartImportPreview) smartImportPreview.hidden = true;
