@@ -7,7 +7,7 @@ from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from playwright.sync_api import Request, sync_playwright
+from playwright.sync_api import Response, sync_playwright
 
 from importar_coleta import (
     enviar_coleta,
@@ -249,27 +249,20 @@ def eh_requisicao_lista_rotas(
 
 # CAPTURAR RESPOSTA GET-ROUTES-LIST
 
-def criar_manipulador_requisicao_finalizada(
+def criar_manipulador_resposta(
     estado_captura,
 ):
 
-    def ao_finalizar_requisicao(
-        requisicao: Request,
+    def ao_receber_resposta(
+        resposta: Response,
     ):
 
         if not eh_requisicao_lista_rotas(
-            requisicao.url
+            resposta.url
         ):
             return
 
         try:
-            resposta = (
-                requisicao.response()
-            )
-
-            if resposta is None:
-                return
-
             if not resposta.ok:
                 estado_captura["erro"] = (
                     "A API de rotas respondeu com "
@@ -277,21 +270,20 @@ def criar_manipulador_requisicao_finalizada(
                 )
                 return
 
-            dados = (
-                resposta.json()
-            )
+            dados = resposta.json()
 
             if not isinstance(
                 dados,
                 dict,
             ):
                 estado_captura["erro"] = (
-                    "A resposta de rotas não é um objeto JSON."
+                    "A resposta de rotas não é "
+                    "um objeto JSON."
                 )
                 return
 
-            rotas = (
-                dados.get("routes")
+            rotas = dados.get(
+                "routes"
             )
 
             if not isinstance(
@@ -299,18 +291,13 @@ def criar_manipulador_requisicao_finalizada(
                 list,
             ):
                 estado_captura["erro"] = (
-                    "O campo 'routes' não foi encontrado "
-                    "na resposta da API."
+                    "O campo 'routes' não foi "
+                    "encontrado na resposta da API."
                 )
                 return
 
-            estado_captura["dados"] = (
-                dados
-            )
-
-            estado_captura["url"] = (
-                requisicao.url
-            )
+            estado_captura["dados"] = dados
+            estado_captura["url"] = resposta.url
 
             estado_captura["capturado_em"] = (
                 datetime.now().isoformat(
@@ -356,7 +343,7 @@ def criar_manipulador_requisicao_finalizada(
                 str(error)
             )
 
-    return ao_finalizar_requisicao
+    return ao_receber_resposta
 
 
 # TRADUZIR STATUS DO LAST MILE
@@ -818,6 +805,300 @@ def atualizar_pagina_monitoramento(
             error,
         )
 
+def traduzir_status_dom(
+    texto,
+):
+
+    texto = (
+        texto
+        or
+        ""
+    ).strip().casefold()
+
+    if (
+        "ambulância" in texto
+        or
+        "ambulancia" in texto
+    ):
+        return "AMBULANCIA"
+
+    if (
+        "concluída" in texto
+        or
+        "concluida" in texto
+        or
+        "completada" in texto
+    ):
+        return "CONCLUIDA"
+
+    if (
+        "voltando para a estação" in texto
+        or
+        "retorno à estação" in texto
+    ):
+        return "RETORNANDO_ESTACAO"
+
+    if (
+        "em andamento" in texto
+        or
+        "em rota" in texto
+    ):
+        return "EM_ROTA"
+
+    return "CARREGANDO"
+
+
+def extrair_registros_do_dom(
+    pagina,
+):
+
+    if (
+        "monitoring-distribution"
+        not in pagina.url.casefold()
+    ):
+        return []
+
+    linhas = pagina.locator(
+        "li.monitoring-row"
+    )
+
+    quantidade = linhas.count()
+
+    if quantidade == 0:
+        return []
+
+    registros = []
+
+    for indice in range(
+        quantidade
+    ):
+
+        linha = linhas.nth(
+            indice
+        )
+
+        try:
+            # ROTA / CLUSTER
+
+            cabecalho_locator = (
+                linha.locator(
+                    ".monitoring-row__promise-container p"
+                )
+                .first
+            )
+
+            if (
+                cabecalho_locator.count()
+                == 0
+            ):
+                continue
+
+            cabecalho = (
+                cabecalho_locator
+                .inner_text()
+                .strip()
+            )
+
+            partes_rota = [
+                parte.strip()
+                for parte in cabecalho.split(
+                    "·",
+                    1,
+                )
+            ]
+
+            cluster = (
+                partes_rota[0]
+                if partes_rota
+                else None
+            )
+
+            rota_id = None
+
+            if (
+                len(partes_rota)
+                > 1
+            ):
+                rota_id = (
+                    partes_rota[1]
+                    .replace("#", "")
+                    .strip()
+                )
+
+            # PLACA E TIPO
+
+            placa_locator = (
+                linha.locator(
+                    "p.monitoring-row-details__license"
+                )
+                .first
+            )
+
+            if (
+                placa_locator.count()
+                == 0
+            ):
+                continue
+
+            texto_veiculo = (
+                placa_locator
+                .inner_text()
+                .strip()
+            )
+
+            partes_veiculo = [
+                parte.strip()
+                for parte in texto_veiculo.split(
+                    "·",
+                    1,
+                )
+            ]
+
+            placa = (
+                partes_veiculo[0]
+                .strip()
+                .upper()
+            )
+
+            tipo_veiculo = (
+                partes_veiculo[1]
+                if len(partes_veiculo) > 1
+                else None
+            )
+
+            if not placa:
+                continue
+
+            # BASE / CICLO
+
+            ciclo_locator = (
+                linha.locator(
+                    ".monitoring-row-details__cycle p"
+                )
+                .first
+            )
+
+            ciclo = ""
+
+            if (
+                ciclo_locator.count()
+                > 0
+            ):
+                ciclo = (
+                    ciclo_locator
+                    .inner_text()
+                    .strip()
+                )
+
+            if (
+                ciclo
+                and
+                BASE_ESPERADA
+                not in ciclo.upper()
+            ):
+                continue
+
+            # MOTORISTA
+
+            motorista_locator = (
+                linha.locator(
+                    ".monitoring-row-details__driver-name"
+                )
+                .first
+            )
+
+            motorista = None
+
+            if (
+                motorista_locator.count()
+                > 0
+            ):
+                motorista = (
+                    motorista_locator
+                    .inner_text()
+                    .strip()
+                    or None
+                )
+
+            # STATUS
+
+            status_locators = (
+                linha.locator(
+                    ".monitoring-row-details__name-container p"
+                )
+            )
+
+            textos_status = []
+
+            for status_indice in range(
+                status_locators.count()
+            ):
+                texto_status = (
+                    status_locators
+                    .nth(status_indice)
+                    .inner_text()
+                    .strip()
+                )
+
+                if texto_status:
+                    textos_status.append(
+                        texto_status
+                    )
+
+            if textos_status:
+                texto_status_final = (
+                    " ".join(
+                        textos_status
+                    )
+                )
+            else:
+                texto_status_final = (
+                    linha.inner_text()
+                )
+
+            status = traduzir_status_dom(
+                texto_status_final
+            )
+
+            registros.append({
+                "placa": placa,
+                "tipo_veiculo": (
+                    tipo_veiculo
+                    or None
+                ),
+                "motorista": motorista,
+                "rota_id": rota_id,
+                "status": status,
+                "cluster": (
+                    cluster
+                    or None
+                ),
+                "observacao": (
+                    f"Origem DOM Mercado Livre"
+                    + (
+                        f" | {ciclo}"
+                        if ciclo
+                        else ""
+                    )
+                ),
+            })
+
+        except Exception as error:
+            print(
+                "⚠️ Linha ignorada:",
+                error,
+            )
+
+    if registros:
+        print()
+        print(
+            "✅ Dados encontrados diretamente na página."
+        )
+        print(
+            f"📦 {len(registros)} rota(s) encontradas."
+        )
+
+    return registros
 
 # AGUARDAR PÁGINA AUTOMATICAMENTE
 
@@ -866,6 +1147,17 @@ def aguardar_registros_automaticamente(
             raise RuntimeError(
                 "O navegador foi fechado."
             )
+
+        registros = extrair_registros_do_dom(
+            pagina
+        )
+
+        if registros:
+            return (
+                pagina,
+                registros,
+            )
+
 
         registros = extrair_registros_da_pagina(
             pagina,
@@ -1254,6 +1546,7 @@ def executar(
                         PROFILE_DIR
                     ),
                     headless=False,
+                    service_workers="block",
                     viewport={
                         "width": 1440,
                         "height": 900,
@@ -1266,8 +1559,8 @@ def executar(
             )
 
             navegador.on(
-                "requestfinished",
-                criar_manipulador_requisicao_finalizada(
+                "response",
+                criar_manipulador_resposta(
                     estado_captura
                 ),
             )

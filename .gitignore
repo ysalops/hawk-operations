@@ -70,3 +70,6 @@ automation/coleta_normalizada.json
 # Sistema operacional
 .DS_Store
 Thumbs.db
+automation/.browser-profile-backup/
+automation/hawk_launcher.log
+*.dump

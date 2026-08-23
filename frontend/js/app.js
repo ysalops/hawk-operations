@@ -573,11 +573,7 @@ const syncStatusMessage =
     );
 
 
-let syncStatusInterval =
-    null;
-
-
-let ultimaSincronizacaoConcluida =
+let atualizacaoColetorLocalInterval =
     null;
 
 // ELEMENTOS - VEÍCULOS SEM CLASSIFICAÇÃO
@@ -969,7 +965,6 @@ function buscarManutencaoAtiva(
 // CARREGAR DADOS
 
 async function carregarDados() {
-
     try {
 
     const [
@@ -1783,8 +1778,7 @@ function atualizarGraficosDashboard() {
 // FROTA
 
 function renderizarVeiculos(
-    lista
-) {
+    lista) {
 
     if (!tableBody) {
 
@@ -3410,8 +3404,7 @@ function renderizarOperacoes(
 // VEÍCULOS SEM CLASSIFICAÇÃO
 
 function mostrarMensagemVeiculosSemClassificacao(
-    mensagem,
-    tipo = ""
+    mensagem,    tipo = ""
 ) {
 
     if (!unclassifiedVehiclesMessage) {
@@ -4903,8 +4896,7 @@ vehicleForm?.addEventListener(
 // EDITAR VEÍCULO
 
 function abrirModalEditarVeiculo(
-    veiculo
-) {
+    veiculo) {
 
     if (!editVehicleModal) {
                 return;
@@ -6016,7 +6008,6 @@ editDriverForm?.addEventListener(
 // HISTÓRICO DO MOTORISTA
 
 function fecharHistoricoMotorista() {
-
     driverHistoryModal
         ?.classList
         .remove(
@@ -6827,7 +6818,6 @@ maintenanceForm?.addEventListener(
 // AÇÕES DAS MANUTENÇÕES
 
 maintenanceTable?.addEventListener(
-
     "click",
 
     event => {
@@ -7847,7 +7837,6 @@ copyPanoramaButton?.addEventListener(
 // FECHAR MODAIS CLICANDO FORA
 
 const modais = [
-
     [
         vehicleModal,
         fecharModalVeiculo
@@ -7994,7 +7983,7 @@ if (panoramaDate) {
 
 }
 
-// SINCRONIZAÇÃO AUTOMÁTICA
+// SINCRONIZAÇÃO LOCAL
 
 function atualizarStatusSincronizacao(
     dados
@@ -8019,30 +8008,12 @@ function atualizarStatusSincronizacao(
 
     const configuracoes = {
 
-        SOLICITADO: {
-            titulo:
-                "Iniciando sincronização",
-
-            icone:
-                "🔄"
-        },
-
-
-        INICIANDO: {
-            titulo:
-                "Abrindo coletor",
-
-            icone:
-                "🔄"
-        },
-
-
         AGUARDANDO_PAGINA: {
             titulo:
-                "Aguardando página operacional",
+                "Abrindo Hawk Collector",
 
             icone:
-                "🔄"
+                "↗"
         },
 
 
@@ -8051,25 +8022,7 @@ function atualizarStatusSincronizacao(
                 "Coletando dados",
 
             icone:
-                "🔄"
-        },
-
-
-        PROCESSANDO: {
-            titulo:
-                "Processando dados",
-
-            icone:
-                "🔄"
-        },
-
-
-        ENVIANDO: {
-            titulo:
-                "Atualizando o Hawk",
-
-            icone:
-                "🔄"
+                "↻"
         },
 
 
@@ -8078,16 +8031,7 @@ function atualizarStatusSincronizacao(
                 "Sincronização concluída",
 
             icone:
-                "✅"
-        },
-
-
-        SEM_REGISTROS: {
-            titulo:
-                "Nenhum registro encontrado",
-
-            icone:
-                "⚠️"
+                "✓"
         },
 
 
@@ -8096,16 +8040,7 @@ function atualizarStatusSincronizacao(
                 "Erro na sincronização",
 
             icone:
-                "❌"
-        },
-
-
-        PARADO: {
-            titulo:
-                "Coletor parado",
-
-            icone:
-                "⏸️"
+                "×"
         }
 
     };
@@ -8124,7 +8059,7 @@ function atualizarStatusSincronizacao(
                 "Sincronização",
 
             icone:
-                "🔄"
+                "↻"
         };
 
 
@@ -8136,53 +8071,40 @@ function atualizarStatusSincronizacao(
         statusAtual;
 
 
-    syncStatusTitle.textContent =
-        configuracao.titulo;
+    if (syncStatusTitle) {
+
+        syncStatusTitle.textContent =
+            configuracao.titulo;
+
+    }
 
 
-    syncStatusIcon.textContent =
-        configuracao.icone;
+    if (syncStatusIcon) {
+
+        syncStatusIcon.textContent =
+            configuracao.icone;
+
+    }
 
 
-    syncStatusMessage.textContent =
+    if (syncStatusMessage) {
 
-        dados.mensagem
+        syncStatusMessage.textContent =
 
-        ||
+            dados.mensagem
 
-        "Aguardando informações do coletor.";
+            ||
 
+            "Aguardando informações do Hawk Collector.";
 
-    const statusEmAndamento = [
-
-        "SOLICITADO",
-
-        "INICIANDO",
-
-        "AGUARDANDO_PAGINA",
-
-        "COLETANDO",
-
-        "PROCESSANDO",
-
-        "ENVIANDO"
-
-    ].includes(
-        statusAtual
-    );
+    }
 
 
     const processoAtivo =
 
-        typeof dados.processo_ativo === "boolean"
-
-        ?
-
         dados.processo_ativo
-
-        :
-
-        statusEmAndamento;
+        ===
+        true;
 
 
     syncOperationButton.disabled =
@@ -8195,287 +8117,109 @@ function atualizarStatusSincronizacao(
 
         ?
 
-        "🔄 Sincronizando..."
+        "Sincronizando..."
 
         :
 
-        "🔄 Sincronizar operação";
+        "Sincronizar operação";
 
 
     syncStatusCard.classList.toggle(
 
         "sync-active",
 
-        (
-            processoAtivo
-            &&
-            statusEmAndamento
-        )
+        processoAtivo
 
     );
 
 }
 
 
-// CONSULTAR STATUS
+// ATUALIZAR DADOS ENQUANTO O COLETOR LOCAL TRABALHA
 
-async function consultarStatusColetor() {
+function acompanharColetorLocal() {
 
-    try {
+    if (
+        atualizacaoColetorLocalInterval
+    ) {
 
-        const response =
-            await fetch(
-                "/coleta/status"
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Não foi possível consultar o coletor."
-            );
-
-        }
-
-
-        const dados =
-            await response.json();
-
-
-        const statusEmAndamento = [
-
-            "SOLICITADO",
-
-            "INICIANDO",
-
-            "AGUARDANDO_PAGINA",
-
-            "COLETANDO",
-
-            "PROCESSANDO",
-
-            "ENVIANDO"
-
-        ].includes(
-            dados.status
+        clearInterval(
+            atualizacaoColetorLocalInterval
         );
 
-
-        if (
-            dados.processo_ativo
-            ===
-            false
-            &&
-            statusEmAndamento
-        ) {
-
-            dados.status =
-                "ERRO";
-
-            dados.mensagem =
-                (
-                    "O coletor foi encerrado antes "
-                    +
-                    "de concluir a sincronização. "
-                    +
-                    "Confira automation/coletor_execucao.log."
-                );
-
-        }
+    }
 
 
-        if (
-            dados.status
-            ===
-            "CONCLUIDO"
-        ) {
-
-            const partesResumo = [
-
-                `Recebidos: ${dados.recebidos ?? 0}`,
-
-                `Importados: ${dados.importados ?? 0}`,
-
-                `Atualizados: ${dados.atualizados ?? 0}`,
-
-                `Ignorados: ${dados.ignorados ?? 0}`
-
-            ];
+    let tentativas =
+        0;
 
 
-            dados.mensagem =
+    atualizacaoColetorLocalInterval =
+        setInterval(
 
-                (
-                    dados.mensagem
-                    ||
-                    "Sincronização concluída com sucesso."
-                )
+            async () => {
 
-                +
-
-                " "
-
-                +
-
-                partesResumo.join(
-                    " • "
-                );
-
-        }
-
-
-        atualizarStatusSincronizacao(
-            dados
-        );
-
-
-        // SINCRONIZAÇÃO FINALIZADA
-
-        if (
-            dados.status
-            ===
-            "CONCLUIDO"
-        ) {
-
-            const identificador =
-
-                dados.atualizado_em
-
-                ||
-
-                "concluido";
-
-
-            if (
-
-                ultimaSincronizacaoConcluida
-
-                !==
-
-                identificador
-
-            ) {
-
-                ultimaSincronizacaoConcluida =
-                    identificador;
+                tentativas++;
 
 
                 await carregarDados();
 
-            }
 
-        }
+                if (
+                    tentativas
+                    >=
+                    24
+                ) {
 
-
-        // PARAR MONITORAMENTO
-
-        const terminou = [
-
-            "CONCLUIDO",
-
-            "ERRO",
-
-            "SEM_REGISTROS"
-
-        ].includes(
-            dados.status
-        );
+                    clearInterval(
+                        atualizacaoColetorLocalInterval
+                    );
 
 
-        if (
-            terminou
-            &&
-            syncStatusInterval
-        ) {
-
-            clearInterval(
-                syncStatusInterval
-            );
+                    atualizacaoColetorLocalInterval =
+                        null;
 
 
-            syncStatusInterval =
-                null;
+                    atualizarStatusSincronizacao({
 
-        }
+                        status:
+                            "CONCLUIDO",
 
+                        mensagem:
+                            (
+                                "Os dados disponíveis foram "
+                                +
+                                "recarregados no Hawk."
+                            ),
 
-        return dados;
+                        processo_ativo:
+                            false
 
+                    });
 
-    } catch (error) {
+                }
 
-        console.error(
+            },
 
-            "Erro ao consultar status do coletor:",
-
-            error
-
-        );
-
-
-        atualizarStatusSincronizacao({
-
-            status:
-                "ERRO",
-
-            mensagem:
-                error.message,
-
-            processo_ativo:
-                false
-
-        });
-
-
-        return null;
-
-    }
-
-}
-
-
-// MONITORAR COLETOR
-
-function iniciarMonitoramentoColetor() {
-
-    if (
-        syncStatusInterval
-    ) {
-
-        clearInterval(
-            syncStatusInterval
-        );
-
-    }
-
-
-    consultarStatusColetor();
-
-
-    syncStatusInterval =
-        setInterval(
-
-            consultarStatusColetor,
-
-            2000
+            5000
 
         );
 
 }
 
 
-// INICIAR SINCRONIZAÇÃO
+// INICIAR HAWK COLLECTOR NO WINDOWS
 
 syncOperationButton?.addEventListener(
 
     "click",
 
-    async () => {
-
+    () => {
 
         const dataOperacao =
 
-            operationFilterDate.value
+            operationFilterDate
+                ?.value
 
             ||
 
@@ -8484,10 +8228,13 @@ syncOperationButton?.addEventListener(
 
         const turno =
 
-            operationFilterShift.value;
+            operationFilterShift
+                ?.value
 
+            ||
 
-        // VALIDAR TURNO
+            "";
+
 
         if (!turno) {
 
@@ -8514,28 +8261,36 @@ syncOperationButton?.addEventListener(
         }
 
 
-        ultimaSincronizacaoConcluida =
-            null;
+        const parametros =
+            new URLSearchParams({
+
+                turno:
+                    turno,
+
+                data:
+                    dataOperacao
+
+            });
 
 
-        syncOperationButton.disabled =
-            true;
-
-
-        syncOperationButton.textContent =
-            "🔄 Iniciando...";
+        const urlColetor =
+            (
+                "hawk://sync?"
+                +
+                parametros.toString()
+            );
 
 
         atualizarStatusSincronizacao({
 
             status:
-                "SOLICITADO",
+                "AGUARDANDO_PAGINA",
 
             mensagem:
                 (
-                    "Solicitando abertura "
+                    "Abrindo o Hawk Collector neste computador. "
                     +
-                    "do coletor..."
+                    "Se o navegador pedir confirmação, permita a abertura."
                 ),
 
             processo_ativo:
@@ -8544,98 +8299,47 @@ syncOperationButton?.addEventListener(
         });
 
 
-        try {
+        window.location.href =
+            urlColetor;
 
-            const parametros =
-                new URLSearchParams({
 
-                    turno:
-                        turno,
+        setTimeout(
 
-                    data_operacao:
-                        dataOperacao
+            () => {
+
+                atualizarStatusSincronizacao({
+
+                    status:
+                        "COLETANDO",
+
+                    mensagem:
+                        (
+                            "No navegador do Mercado Livre, acesse "
+                            +
+                            "Monitoramento Last Mile. "
+                            +
+                            "O Hawk será atualizado automaticamente."
+                        ),
+
+                    processo_ativo:
+                        true
 
                 });
 
+            },
 
-            const response =
-                await fetch(
+            1500
 
-                    (
-                        "/coleta/iniciar?"
-                        +
-                        parametros.toString()
-                    ),
-
-                    {
-
-                        method:
-                            "POST"
-
-                    }
-
-                );
+        );
 
 
-            const dados =
-                await response.json();
-
-
-            if (!response.ok) {
-
-                throw new Error(
-
-                    dados.detail
-
-                    ||
-
-                    "Não foi possível iniciar a sincronização."
-
-                );
-
-            }
-
-
-            iniciarMonitoramentoColetor();
-
-
-        } catch (error) {
-
-
-            atualizarStatusSincronizacao({
-
-                status:
-                    "ERRO",
-
-                mensagem:
-                    error.message,
-
-                processo_ativo:
-                    false
-
-            });
-
-        }
+        acompanharColetorLocal();
 
     }
 
 );
 
+
+// CARGA INICIAL DO SISTEMA
+
 carregarDados();
-
-consultarStatusColetor()
-    .then(
-        dados => {
-
-            if (
-                dados
-                &&
-                dados.processo_ativo
-            ) {
-
-                iniciarMonitoramentoColetor();
-
-            }
-
-        }
-    );
