@@ -5,8 +5,8 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Ylume Ops</title>
-<link href="/static/assets/logo-ylume-ops.svg" rel="icon" type="image/png"/>
-<link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="/static/css/style.css?v=36" rel="stylesheet"/>
+<link href="/static/assets/logo-ylume-ops.svg" rel="icon" type="image/svg+xml"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="/static/css/style.css?v=1.0.0" rel="stylesheet"/>
 </head>
 <body class="ylume-orion-ui">
 <!-- =====================================================
@@ -870,7 +870,7 @@
 <div class="panorama-controls panorama-controls-expanded">
 <div class="form-group">
 <label for="panoramaUnit">Unidade / base</label>
-<input id="panoramaUnit" type="text" placeholder="Ex: SSP17: SBC"/>
+<input id="panoramaUnit" type="text" placeholder="Ex: Base operacional"/>
 </div>
 <div class="form-group">
 <label for="panoramaOperator">Operador / MLP</label>
@@ -1730,7 +1730,7 @@
 <section class="smart-import-panel" data-import-panel="text">
 <div class="form-group">
 <label for="smartImportText">Cole o panorama, mensagem ou tabela</label>
-<textarea id="smartImportText" rows="11" placeholder="Ex.:\nPANORAMA SSP17: SBC\n18/07/2026\n\nTAS0E26 ✅ 426292126 (Vitória)\nTAS7A15 🚫 pausado...\n\nCARROS EM MANUTENÇÃO.\nTAS1H32 🛠️ colisão"></textarea>
+<textarea id="smartImportText" rows="11" placeholder="Ex.:\nPANORAMA Base operacional\n18/07/2026\n\nABC1D23 ✅ ROTA-101 (Motorista)\nDEF4G56 🚫 motivo informado...\n\nCARROS EM MANUTENÇÃO.\nGHI7J89 🛠️ manutenção preventiva"></textarea>
 </div>
 <label class="smart-import-check"><input id="smartImportUseAi" type="checkbox"/> <span>Opcional: usar o provedor de IA quando o texto não puder ser interpretado com segurança pela leitura local.</span></label>
 </section>
@@ -2015,7 +2015,7 @@
          ===================================================== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="/static/js/app.js?v=36"></script>
+<script src="/static/js/app.js?v=1.0.0"></script>
 <script>
 
         if (

@@ -163,7 +163,7 @@ app = FastAPI(
         "API para gestão operacional de frota, motoristas, ajudantes, "
         "manutenções, panoramas e rotas."
     ),
-    version="0.4.0",
+    version="1.0.0",
 )
 
 @app.middleware("http")
@@ -3028,7 +3028,7 @@ def obter_configuracao_panorama(db: Session) -> models.PanoramaConfiguracao:
     if not config:
         config = models.PanoramaConfiguracao(
             id=1,
-            unidade="SSP17: SBC",
+            unidade="Base operacional",
             operador="",
         )
         db.add(config)
@@ -3057,7 +3057,7 @@ def salvar_configuracao_panorama(
 ):
     config = obter_configuracao_panorama(db)
     if dados.unidade is not None:
-        config.unidade = dados.unidade.strip() or "SSP17: SBC"
+        config.unidade = dados.unidade.strip() or "Base operacional"
     if dados.operador is not None:
         config.operador = dados.operador.strip()
     db.commit()

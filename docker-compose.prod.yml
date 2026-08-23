@@ -24,8 +24,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "127.0.0.1:8000:8000"
-    volumes:
-      - ./database:/app/database
     environment:
       TZ: America/Sao_Paulo
       POSTGRES_HOST: postgres
@@ -35,7 +33,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       YLUME_OPS_ACCESS_PASSWORD: ${YLUME_OPS_ACCESS_PASSWORD}
       YLUME_OPS_SESSION_SECRET: ${YLUME_OPS_SESSION_SECRET}
-      YLUME_OPS_COOKIE_SECURE: ${YLUME_OPS_COOKIE_SECURE:-false}
+      YLUME_OPS_COOKIE_SECURE: "true"
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       YLUME_OPS_AI_MODEL: ${YLUME_OPS_AI_MODEL:-gpt-5.6-luna}
     depends_on:

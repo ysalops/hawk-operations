@@ -338,6 +338,6 @@ class PanoramaConfiguracao(Base):
     __tablename__ = "panorama_configuracao"
 
     id: Mapped[int] = mapped_column(primary_key=True, default=1)
-    unidade: Mapped[str] = mapped_column(String(120), default="SSP17: SBC", nullable=False)
+    unidade: Mapped[str] = mapped_column(String(120), default="Base operacional", nullable=False)
     operador: Mapped[str] = mapped_column(String(150), default="", nullable=False)
     atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
