@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1 - 2026-08-23
+
+- Corrige cache de páginas HTML após login/logout em produção.
+- Redireciona login e logout com versão da interface para evitar HTML legado em cache.
+- Adiciona cabeçalhos `no-store`/`no-cache` às páginas `/` e `/login`.
+
 ## 1.0.0 — 2026-08-23
 
 Primeira versão fechada do Ylume Ops.

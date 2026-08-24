@@ -4908,7 +4908,7 @@ logoutButton?.addEventListener(
         } finally {
 
             window.location.href =
-                "/login";
+                "/login?v=1.0.1";
 
         }
 

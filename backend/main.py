@@ -89,6 +89,12 @@ aplicar_migracoes_leves()
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
 
+NO_CACHE_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
 # AUTENTICAÇÃO
 
 YLUME_OPS_ACCESS_PASSWORD = os.getenv(
@@ -163,7 +169,7 @@ app = FastAPI(
         "API para gestão operacional de frota, motoristas, ajudantes, "
         "manutenções, panoramas e rotas."
     ),
-    version="1.0.0",
+    version="1.0.1",
 )
 
 @app.middleware("http")
@@ -190,7 +196,7 @@ async def proteger_ylume_ops(
 
     if request.method == "GET":
         return RedirectResponse(
-            url="/login",
+            url="/login?v=1.0.1",
             status_code=303,
         )
 
@@ -221,12 +227,13 @@ def login_page(
 ):
     if esta_autenticado(request):
         return RedirectResponse(
-            url="/",
+            url="/?v=1.0.1",
             status_code=303,
         )
 
     return FileResponse(
-        FRONTEND_DIR / "login.html"
+        FRONTEND_DIR / "login.html",
+        headers=NO_CACHE_HEADERS,
     )
 
 
@@ -297,7 +304,8 @@ def logout():
 @app.get("/", include_in_schema=False)
 def home():
     return FileResponse(
-        FRONTEND_DIR / "index.html"
+        FRONTEND_DIR / "index.html",
+        headers=NO_CACHE_HEADERS,
     )
 
 

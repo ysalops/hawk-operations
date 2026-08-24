@@ -160,7 +160,7 @@
                     body: JSON.stringify({ password: password.value }),
                 });
                 if (!response.ok) throw new Error();
-                window.location.href = "/";
+                window.location.replace("/?v=1.0.1");
             } catch {
                 errorMessage.textContent = "Senha inválida. Tente novamente.";
                 password.select();
